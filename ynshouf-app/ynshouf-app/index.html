@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#1a3a2a">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ינשו״פ">
@@ -11,6 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
 <style>
 :root {
   --green-dark: #1a3a2a;
@@ -30,49 +32,20 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; background: var(--green-dark); color: var(--text-dark); }
-
-/* App Shell */
 #app { height: 100vh; display: flex; flex-direction: column; }
-
-/* Header */
-.header {
-  background: var(--green-dark);
-  padding: 52px 20px 16px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
+.header { background: var(--green-dark); padding: 48px 20px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .header-logo { display: flex; align-items: center; gap: 10px; }
 .header-icon { width: 36px; height: 36px; background: var(--green-accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-.header-title { font-size: 18px; font-weight: 700; color: var(--white); letter-spacing: -0.3px; }
-.header-sub { font-size: 11px; color: var(--green-accent); font-weight: 400; }
-
-/* Tab Bar */
-.tab-bar {
-  background: var(--green-dark);
-  display: flex;
-  padding: 0 16px 12px;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.tab {
-  flex: 1; padding: 9px 0; border-radius: 10px; border: none;
-  font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 500;
-  cursor: pointer; transition: all 0.2s;
-  background: transparent; color: rgba(255,255,255,0.5);
-}
+.header-title { font-size: 18px; font-weight: 700; color: var(--white); }
+.header-sub { font-size: 11px; color: var(--green-accent); }
+.tab-bar { background: var(--green-dark); display: flex; padding: 0 16px 12px; gap: 8px; flex-shrink: 0; }
+.tab { flex: 1; padding: 9px 0; border-radius: 10px; border: none; font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; background: transparent; color: rgba(255,255,255,0.5); }
 .tab.active { background: var(--green-mid); color: var(--white); }
-
-/* Content Area */
 .content { flex: 1; overflow-y: auto; background: var(--sand); border-radius: 20px 20px 0 0; }
-
-/* Views */
-.view { display: none; padding: 20px 16px 100px; }
+.view { display: none; padding: 20px 16px 120px; }
 .view.active { display: block; }
-
-/* Form Styles */
 .section-title { font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 10px; }
 .section-title:first-child { margin-top: 4px; }
-
 .field { margin-bottom: 12px; }
 .field label { display: block; font-size: 13px; color: var(--text-mid); margin-bottom: 5px; font-weight: 500; }
 .field input, .field select, .field textarea {
@@ -86,61 +59,55 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .field textarea { min-height: 90px; resize: none; line-height: 1.6; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-/* Generate Button */
-.gen-btn {
-  width: 100%; padding: 16px; margin-top: 16px;
-  background: var(--green-dark); color: var(--white);
-  border: none; border-radius: var(--radius); font-family: 'Heebo', sans-serif;
-  font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+/* Image Upload */
+.img-upload-area {
+  border: 2px dashed var(--sand-dark); border-radius: var(--radius);
+  padding: 20px; text-align: center; cursor: pointer;
+  background: var(--white); transition: all 0.2s;
 }
-.gen-btn:active { transform: scale(0.98); opacity: 0.9; }
-.gen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.img-upload-area:active { border-color: var(--green-accent); background: var(--green-pale); }
+.img-upload-icon { font-size: 32px; margin-bottom: 8px; }
+.img-upload-text { font-size: 14px; color: var(--text-mid); }
+.img-upload-sub { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+.img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.img-thumb { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
+.img-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.img-thumb-del { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; background: rgba(0,0,0,0.6); border: none; border-radius: 50%; color: white; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.img-count { font-size: 12px; color: var(--text-light); margin-top: 8px; text-align: center; }
 
-/* Result Box */
-.result-box {
-  margin-top: 16px; background: var(--white); border-radius: var(--radius);
-  border: 1.5px solid var(--green-accent); overflow: hidden; display: none;
-}
-.result-header {
-  background: var(--green-dark); padding: 12px 16px;
-  display: flex; align-items: center; justify-content: space-between;
-}
+/* Buttons */
+.gen-btn { width: 100%; padding: 16px; margin-top: 16px; background: var(--green-dark); color: var(--white); border: none; border-radius: var(--radius); font-family: 'Heebo', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.gen-btn:active { opacity: 0.9; }
+.gen-btn:disabled { opacity: 0.5; }
+
+/* Result */
+.result-box { margin-top: 16px; background: var(--white); border-radius: var(--radius); border: 1.5px solid var(--green-accent); overflow: hidden; display: none; }
+.result-header { background: var(--green-dark); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
 .result-header span { font-size: 13px; font-weight: 600; color: var(--white); }
-.copy-btn {
-  background: var(--green-accent); color: var(--white); border: none;
-  padding: 6px 14px; border-radius: 20px; font-family: 'Heebo', sans-serif;
-  font-size: 12px; font-weight: 600; cursor: pointer;
-}
+.copy-btn { background: var(--green-accent); color: var(--white); border: none; padding: 6px 14px; border-radius: 20px; font-family: 'Heebo', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
 .result-text { padding: 16px; font-size: 14px; line-height: 1.8; color: var(--text-dark); white-space: pre-wrap; direction: rtl; }
 
-/* Save Button */
-.save-btn {
-  width: 100%; padding: 13px; margin-top: 10px;
-  background: var(--green-pale); color: var(--green-dark);
-  border: 1.5px solid var(--green-accent); border-radius: var(--radius);
-  font-family: 'Heebo', sans-serif; font-size: 14px; font-weight: 600;
-  cursor: pointer; display: none;
-}
+/* Export Section */
+.export-section { margin-top: 16px; background: var(--white); border-radius: var(--radius); padding: 16px; display: none; border: 1.5px solid var(--sand-dark); }
+.export-title { font-size: 13px; font-weight: 700; color: var(--text-mid); margin-bottom: 12px; }
+.email-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.email-input { flex: 1; padding: 10px 12px; border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 14px; direction: ltr; outline: none; }
+.email-input:focus { border-color: var(--green-accent); }
+.send-btn { padding: 10px 16px; background: var(--green-mid); color: var(--white); border: none; border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.download-btn { width: 100%; padding: 13px; background: var(--green-pale); color: var(--green-dark); border: 1.5px solid var(--green-accent); border-radius: var(--radius); font-family: 'Heebo', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
 
 /* Loading */
-.loading-bar {
-  height: 3px; background: var(--green-pale);
-  border-radius: 2px; overflow: hidden; margin: 12px 0; display: none;
-}
-.loading-bar-inner {
-  height: 100%; background: var(--green-accent);
-  border-radius: 2px; animation: loading 1.5s ease-in-out infinite;
-}
+.loading-bar { height: 3px; background: var(--green-pale); border-radius: 2px; overflow: hidden; margin: 12px 0; display: none; }
+.loading-bar-inner { height: 100%; background: var(--green-accent); border-radius: 2px; animation: loading 1.5s ease-in-out infinite; }
 @keyframes loading { 0%,100%{width:20%;margin-right:0} 50%{width:60%;margin-right:20%} }
+
+/* Toast */
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--green-dark); color: var(--white); padding: 12px 20px; border-radius: 20px; font-size: 14px; font-weight: 500; display: none; z-index: 999; white-space: nowrap; }
+.toast.show { display: block; }
 
 /* History */
 .history-empty { text-align: center; padding: 60px 20px; color: var(--text-light); font-size: 15px; }
-.history-item {
-  background: var(--white); border-radius: var(--radius); padding: 14px 16px;
-  margin-bottom: 10px; cursor: pointer; transition: all 0.15s;
-  border: 1.5px solid transparent;
-}
+.history-item { background: var(--white); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; cursor: pointer; border: 1.5px solid transparent; }
 .history-item:active { border-color: var(--green-accent); }
 .history-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .history-type { font-size: 12px; font-weight: 700; color: var(--green-mid); background: var(--green-pale); padding: 3px 10px; border-radius: 20px; }
@@ -150,15 +117,9 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .history-delete { background: none; border: none; color: var(--danger); font-size: 18px; cursor: pointer; padding: 4px 8px; }
 
 /* Modal */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100;
-  display: none; align-items: flex-end; justify-content: center;
-}
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: flex-end; justify-content: center; }
 .modal-overlay.open { display: flex; }
-.modal {
-  background: var(--white); border-radius: 20px 20px 0 0;
-  width: 100%; max-height: 80vh; overflow-y: auto; padding: 20px 16px 40px;
-}
+.modal { background: var(--white); border-radius: 20px 20px 0 0; width: 100%; max-height: 80vh; overflow-y: auto; padding: 20px 16px 40px; }
 .modal-handle { width: 40px; height: 4px; background: var(--sand-dark); border-radius: 2px; margin: 0 auto 16px; }
 .modal-type { font-size: 12px; font-weight: 700; color: var(--green-mid); background: var(--green-pale); padding: 3px 10px; border-radius: 20px; display: inline-block; margin-bottom: 8px; }
 .modal-date { font-size: 12px; color: var(--text-light); margin-bottom: 12px; }
@@ -188,7 +149,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
     <!-- FORM VIEW -->
     <div class="view active" id="view-form">
       <div class="section-title">פרטי האירוע</div>
-
       <div class="field-row">
         <div class="field">
           <label>תאריך</label>
@@ -199,7 +159,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
           <input type="time" id="time">
         </div>
       </div>
-
       <div class="field">
         <label>סוג האירוע</label>
         <select id="event_type">
@@ -212,31 +171,26 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
           <option>אחר</option>
         </select>
       </div>
-
       <div class="field">
         <label>מיקום / אזור</label>
         <input type="text" id="location" placeholder="לדוגמה: בין אופקים לבסיס חצרים">
       </div>
 
       <div class="section-title">פרטי מבצע / רכב</div>
-
       <div class="field">
         <label>לוחית רישוי</label>
         <input type="text" id="plate" placeholder="לדוגמה: 304-20-203">
       </div>
-
       <div class="field">
         <label>סוג רכב</label>
         <input type="text" id="vehicle" placeholder="לדוגמה: משאית וולבו לבנה">
       </div>
-
       <div class="field">
         <label>בעלים / מבצע</label>
         <input type="text" id="owner" placeholder="שם ופרטים אם ידועים">
       </div>
 
       <div class="section-title">תיעוד ותיאור</div>
-
       <div class="field">
         <label>תיעוד שנאסף</label>
         <select id="documentation">
@@ -247,16 +201,24 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
           <option>ללא תיעוד</option>
         </select>
       </div>
-
       <div class="field">
         <label>תיאור מה קרה (במילים שלך)</label>
-        <textarea id="description" placeholder="תאר מה ראית בשטח. ה-AI יכתוב את הדוח הרשמי..."></textarea>
+        <textarea id="description" placeholder="תאר מה ראית בשטח..."></textarea>
       </div>
-
       <div class="field">
         <label>הערות נוספות</label>
         <input type="text" id="notes" placeholder="מקרים קודמים, תיאומים וכו׳">
       </div>
+
+      <div class="section-title">תמונות מהשטח</div>
+      <div class="img-upload-area" onclick="document.getElementById('imgInput').click()">
+        <div class="img-upload-icon">📸</div>
+        <div class="img-upload-text">הוסף תמונות מהגלריה</div>
+        <div class="img-upload-sub">ניתן לבחור מספר תמונות</div>
+      </div>
+      <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImages(this)">
+      <div class="img-grid" id="imgGrid"></div>
+      <div class="img-count" id="imgCount"></div>
 
       <button class="gen-btn" id="genBtn" onclick="generateReport()">
         <span>✍️</span> כתיבת מהות האירוע
@@ -274,7 +236,19 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         <div class="result-text" id="resultText"></div>
       </div>
 
-      <button class="save-btn" id="saveBtn" onclick="saveReport()">💾 שמור לארכיון</button>
+      <!-- Export Section -->
+      <div class="export-section" id="exportSection">
+        <div class="export-title">📄 ייצוא דוח Word</div>
+        <div class="email-row">
+          <input type="email" class="email-input" id="emailInput" placeholder="כתובת מייל לשליחה" dir="ltr">
+          <button class="send-btn" onclick="sendByEmail()">שלח 📧</button>
+        </div>
+        <button class="download-btn" onclick="downloadWord()">⬇️ הורד קובץ Word לטלפון</button>
+      </div>
+
+      <div style="margin-top:10px; display:none" id="saveSection">
+        <button style="width:100%;padding:13px;background:var(--green-pale);color:var(--green-dark);border:1.5px solid var(--green-accent);border-radius:var(--radius);font-family:'Heebo',sans-serif;font-size:14px;font-weight:600;cursor:pointer;" onclick="saveReport()">💾 שמור לארכיון</button>
+      </div>
     </div>
 
     <!-- HISTORY VIEW -->
@@ -297,17 +271,61 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('date').value = today;
+const PROXY = 'https://ynshouf-proxy.fonzoahrak.workers.dev';
+let uploadedImages = [];
+
+// Init
+document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
 
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='form') || (i===1 && tab==='history')));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='form')||(i===1&&tab==='history')));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + tab).classList.add('active');
   if (tab === 'history') renderHistory();
 }
 
+// Image handling
+function handleImages(input) {
+  const files = Array.from(input.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      uploadedImages.push({ src: e.target.result, name: file.name });
+      renderImages();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderImages() {
+  const grid = document.getElementById('imgGrid');
+  const count = document.getElementById('imgCount');
+  grid.innerHTML = uploadedImages.map((img, i) => `
+    <div class="img-thumb">
+      <img src="${img.src}" alt="תמונה ${i+1}">
+      <button class="img-thumb-del" onclick="removeImage(${i})">×</button>
+    </div>
+  `).join('');
+  count.textContent = uploadedImages.length > 0 ? `${uploadedImages.length} תמונות נבחרו` : '';
+}
+
+function removeImage(i) {
+  uploadedImages.splice(i, 1);
+  renderImages();
+}
+
+// Generate report
 async function generateReport() {
   const eventType = document.getElementById('event_type').value;
   const location = document.getElementById('location').value;
@@ -323,28 +341,30 @@ async function generateReport() {
   const notes = document.getElementById('notes').value;
   const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
 
-  const btn = document.getElementById('genBtn');
-  btn.disabled = true;
-  document.getElementById('loadingBar').style.display = 'block';
-  document.getElementById('resultBox').style.display = 'none';
-  document.getElementById('saveBtn').style.display = 'none';
-
   const prompt = `אתה פקח סביבתי ינשו"פ של רשות הטבע והגנים. כתוב סעיף "מהות האירוע" לדוח אכיפה רשמי בעברית.
 סגנון: רשמי, עובדתי, ענייני. גוף ראשון יחיד. פסקאות קצרות. בלי כותרות פנימיות. התחל ב"במסגרת פעילות אכיפה שוטפת...".
 פרטים: תאריך: ${dateFormatted}, שעה: ${time||'לא ידועה'}, סוג: ${eventType}, מיקום: ${location}, לוחית: ${plate||'לא ידועה'}, רכב: ${vehicle||'לא ידוע'}, בעלים: ${owner||'לא ידוע'}, תיעוד: ${documentation}, תיאור: ${description}, הערות: ${notes||'אין'}.
 כתוב רק גוף הטקסט, ללא כותרת.`;
 
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('loadingBar').style.display = 'block';
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('exportSection').style.display = 'none';
+  document.getElementById('saveSection').style.display = 'none';
+
   try {
-    const response = await fetch('https://ynshouf-proxy.fonzoahrak.workers.dev', {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch(PROXY, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt })
     });
     const data = await response.json();
     const text = data.text || 'שגיאה';
     document.getElementById('resultText').textContent = text;
     document.getElementById('resultBox').style.display = 'block';
-    document.getElementById('saveBtn').style.display = 'block';
+    document.getElementById('exportSection').style.display = 'block';
+    document.getElementById('saveSection').style.display = 'block';
     document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
   } catch(e) {
     alert('שגיאה בחיבור. בדוק אינטרנט.');
@@ -356,15 +376,187 @@ async function generateReport() {
 
 function copyResult() {
   navigator.clipboard.writeText(document.getElementById('resultText').textContent);
-  document.querySelector('.copy-btn').textContent = 'הועתק ✓';
-  setTimeout(() => document.querySelector('.copy-btn').textContent = 'העתק', 2000);
+  showToast('הטקסט הועתק ✓');
+}
+
+// Word document generation
+async function buildWordDoc() {
+  const { Document, Paragraph, TextRun, ImageRun, HeadingLevel, AlignmentType, Packer } = docx;
+
+  const date = document.getElementById('date').value;
+  const eventType = document.getElementById('event_type').value;
+  const location = document.getElementById('location').value;
+  const plate = document.getElementById('plate').value;
+  const vehicle = document.getElementById('vehicle').value;
+  const owner = document.getElementById('owner').value;
+  const reportText = document.getElementById('resultText').textContent;
+  const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
+
+  const children = [];
+
+  // Header
+  children.push(new Paragraph({
+    children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, size: 28, rightToLeft: true })],
+    alignment: AlignmentType.CENTER,
+  }));
+  children.push(new Paragraph({
+    children: [new TextRun({ text: 'ינשו״פ — יחידה נגד שריפות והשלכות פסולת', size: 22, rightToLeft: true })],
+    alignment: AlignmentType.CENTER,
+  }));
+  children.push(new Paragraph({ text: '' }));
+  children.push(new Paragraph({
+    children: [new TextRun({ text: 'דוח פעולה', bold: true, size: 28, rightToLeft: true })],
+    alignment: AlignmentType.CENTER,
+  }));
+  children.push(new Paragraph({ text: '' }));
+
+  // Details table
+  const details = [
+    ['תאריך', dateFormatted],
+    ['סוג אירוע', eventType],
+    ['מיקום', location],
+    ['לוחית רישוי', plate || 'לא ידועה'],
+    ['סוג רכב', vehicle || 'לא ידוע'],
+    ['בעלים/מבצע', owner || 'לא ידוע'],
+  ];
+
+  details.forEach(([label, value]) => {
+    children.push(new Paragraph({
+      children: [
+        new TextRun({ text: `${label}: `, bold: true, rightToLeft: true }),
+        new TextRun({ text: value, rightToLeft: true }),
+      ],
+      alignment: AlignmentType.RIGHT,
+    }));
+  });
+
+  children.push(new Paragraph({ text: '' }));
+  children.push(new Paragraph({
+    children: [new TextRun({ text: 'מהות האירוע', bold: true, size: 26, rightToLeft: true })],
+    alignment: AlignmentType.RIGHT,
+  }));
+  children.push(new Paragraph({ text: '' }));
+
+  // Report text paragraphs
+  reportText.split('\n').forEach(line => {
+    if (line.trim()) {
+      children.push(new Paragraph({
+        children: [new TextRun({ text: line, rightToLeft: true, size: 22 })],
+        alignment: AlignmentType.RIGHT,
+      }));
+    }
+  });
+
+  // Images
+  if (uploadedImages.length > 0) {
+    children.push(new Paragraph({ text: '' }));
+    children.push(new Paragraph({
+      children: [new TextRun({ text: 'תמונות מהשטח', bold: true, size: 26, rightToLeft: true })],
+      alignment: AlignmentType.RIGHT,
+    }));
+
+    for (let i = 0; i < uploadedImages.length; i++) {
+      const img = uploadedImages[i];
+      try {
+        const base64 = img.src.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
+
+        children.push(new Paragraph({ text: '' }));
+        children.push(new Paragraph({
+          children: [new TextRun({ text: `תמונה ${i+1}`, bold: true, rightToLeft: true })],
+          alignment: AlignmentType.RIGHT,
+        }));
+        children.push(new Paragraph({
+          children: [new ImageRun({
+            data: bytes,
+            transformation: { width: 400, height: 300 },
+            type: 'jpg',
+          })],
+          alignment: AlignmentType.CENTER,
+        }));
+      } catch(e) {
+        console.error('Image error', e);
+      }
+    }
+  }
+
+  const doc = new Document({ sections: [{ properties: { }, children }] });
+  return await Packer.toBlob(doc);
+}
+
+async function downloadWord() {
+  const btn = document.querySelector('.download-btn');
+  btn.textContent = '⏳ מכין קובץ...';
+  btn.disabled = true;
+  try {
+    const blob = await buildWordDoc();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `דוח_אכיפה_${new Date().toLocaleDateString('he-IL').replace(/\./g,'-')}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('הקובץ הורד בהצלחה ✓');
+  } catch(e) {
+    alert('שגיאה ביצירת הקובץ');
+  }
+  btn.textContent = '⬇️ הורד קובץ Word לטלפון';
+  btn.disabled = false;
+}
+
+async function sendByEmail() {
+  const email = document.getElementById('emailInput').value.trim();
+  if (!email) { alert('יש להכניס כתובת מייל'); return; }
+
+  const btn = document.querySelector('.send-btn');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+
+  try {
+    const blob = await buildWordDoc();
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+      const reportText = document.getElementById('resultText').textContent;
+      const eventType = document.getElementById('event_type').value;
+      const date = document.getElementById('date').value;
+      const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
+
+      const response = await fetch(PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_email',
+          to: email,
+          subject: `דוח אכיפה — ${eventType} — ${dateFormatted}`,
+          body: reportText,
+          attachment: base64,
+          filename: `דוח_אכיפה_${dateFormatted}.docx`
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        showToast(`המייל נשלח ל-${email} ✓`);
+      } else {
+        showToast('שגיאה בשליחת המייל');
+      }
+    };
+    reader.readAsDataURL(blob);
+  } catch(e) {
+    alert('שגיאה. נסה שוב.');
+  }
+
+  btn.textContent = 'שלח 📧';
+  btn.disabled = false;
 }
 
 function saveReport() {
   const report = {
     id: Date.now(),
     date: document.getElementById('date').value,
-    time: document.getElementById('time').value,
     type: document.getElementById('event_type').value,
     location: document.getElementById('location').value,
     text: document.getElementById('resultText').textContent,
@@ -373,8 +565,7 @@ function saveReport() {
   const history = JSON.parse(localStorage.getItem('reports') || '[]');
   history.unshift(report);
   localStorage.setItem('reports', JSON.stringify(history));
-  document.getElementById('saveBtn').textContent = '✓ נשמר!';
-  setTimeout(() => { document.getElementById('saveBtn').textContent = '💾 שמור לארכיון'; }, 2000);
+  showToast('נשמר לארכיון ✓');
 }
 
 function renderHistory() {
@@ -410,8 +601,7 @@ function closeModal(e) { if (e.target === document.getElementById('modalOverlay'
 
 function copyModal() {
   navigator.clipboard.writeText(document.getElementById('modalText').textContent);
-  document.querySelector('.modal-copy').textContent = 'הועתק ✓';
-  setTimeout(() => document.querySelector('.modal-copy').textContent = 'העתק טקסט', 2000);
+  showToast('הועתק ✓');
 }
 
 function deleteReport(e, id) {
@@ -422,9 +612,7 @@ function deleteReport(e, id) {
   renderHistory();
 }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>
