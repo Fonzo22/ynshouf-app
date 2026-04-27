@@ -60,20 +60,21 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 /* Image Upload */
-.img-upload-area {
-  border: 2px dashed var(--sand-dark); border-radius: var(--radius);
-  padding: 20px; text-align: center; cursor: pointer;
-  background: var(--white); transition: all 0.2s;
-}
+.img-upload-area { border: 2px dashed var(--sand-dark); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; background: var(--white); transition: all 0.2s; }
 .img-upload-area:active { border-color: var(--green-accent); background: var(--green-pale); }
 .img-upload-icon { font-size: 32px; margin-bottom: 8px; }
 .img-upload-text { font-size: 14px; color: var(--text-mid); }
 .img-upload-sub { font-size: 12px; color: var(--text-light); margin-top: 4px; }
-.img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-.img-thumb { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
-.img-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.img-thumb-del { position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; background: rgba(0,0,0,0.6); border: none; border-radius: 50%; color: white; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .img-count { font-size: 12px; color: var(--text-light); margin-top: 8px; text-align: center; }
+
+/* Image Card */
+.img-card { background: var(--white); border-radius: 10px; padding: 12px; border: 1.5px solid var(--sand-dark); margin-bottom: 10px; }
+.img-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.img-card-num { font-size: 13px; font-weight: 700; color: var(--green-mid); }
+.img-card-del { background: none; border: none; color: var(--danger); font-size: 20px; cursor: pointer; padding: 0 4px; }
+.img-card img { width: 100%; border-radius: 8px; max-height: 200px; object-fit: cover; margin-bottom: 8px; }
+.img-card input { width: 100%; padding: 8px 10px; border: 1.5px solid var(--sand-dark); border-radius: 8px; font-family: 'Heebo', sans-serif; font-size: 13px; direction: rtl; outline: none; background: var(--sand); }
+.img-card input:focus { border-color: var(--green-accent); }
 
 /* Buttons */
 .gen-btn { width: 100%; padding: 16px; margin-top: 16px; background: var(--green-dark); color: var(--white); border: none; border-radius: var(--radius); font-family: 'Heebo', sans-serif; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -82,10 +83,21 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 
 /* Result */
 .result-box { margin-top: 16px; background: var(--white); border-radius: var(--radius); border: 1.5px solid var(--green-accent); overflow: hidden; display: none; }
-.result-header { background: var(--green-dark); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+.result-header { background: var(--green-dark); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 .result-header span { font-size: 13px; font-weight: 600; color: var(--white); }
-.copy-btn { background: var(--green-accent); color: var(--white); border: none; padding: 6px 14px; border-radius: 20px; font-family: 'Heebo', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
+.result-actions { display: flex; gap: 6px; }
+.copy-btn { background: var(--green-accent); color: var(--white); border: none; padding: 6px 12px; border-radius: 20px; font-family: 'Heebo', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
+.edit-btn { background: rgba(255,255,255,0.15); color: var(--white); border: 1px solid rgba(255,255,255,0.3); padding: 6px 12px; border-radius: 20px; font-family: 'Heebo', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; }
 .result-text { padding: 16px; font-size: 14px; line-height: 1.8; color: var(--text-dark); white-space: pre-wrap; direction: rtl; }
+.result-textarea { width: 100%; padding: 16px; font-size: 14px; line-height: 1.8; color: var(--text-dark); direction: rtl; border: none; outline: none; font-family: 'Heebo', sans-serif; resize: none; min-height: 200px; background: var(--white); display: none; }
+
+/* AI Fix Section */
+.ai-fix-section { padding: 12px 16px; border-top: 1px solid var(--sand-dark); background: var(--sand); display: none; }
+.ai-fix-label { font-size: 12px; color: var(--text-mid); margin-bottom: 6px; font-weight: 600; }
+.ai-fix-row { display: flex; gap: 8px; }
+.ai-fix-input { flex: 1; padding: 9px 12px; border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 13px; direction: rtl; outline: none; background: var(--white); }
+.ai-fix-input:focus { border-color: var(--green-accent); }
+.ai-fix-btn { padding: 9px 14px; background: var(--green-mid); color: var(--white); border: none; border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 
 /* Export Section */
 .export-section { margin-top: 16px; background: var(--white); border-radius: var(--radius); padding: 16px; display: none; border: 1.5px solid var(--sand-dark); }
@@ -146,7 +158,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
   </div>
 
   <div class="content">
-    <!-- FORM VIEW -->
     <div class="view active" id="view-form">
       <div class="section-title">פרטי האירוע</div>
       <div class="field-row">
@@ -217,7 +228,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         <div class="img-upload-sub">ניתן לבחור מספר תמונות</div>
       </div>
       <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImages(this)">
-      <div class="img-grid" id="imgGrid"></div>
+      <div id="imgGrid" style="margin-top:12px"></div>
       <div class="img-count" id="imgCount"></div>
 
       <button class="gen-btn" id="genBtn" onclick="generateReport()">
@@ -228,13 +239,32 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         <div class="loading-bar-inner"></div>
       </div>
 
+      <!-- Result Box -->
       <div class="result-box" id="resultBox">
         <div class="result-header">
           <span>מהות האירוע</span>
-          <button class="copy-btn" onclick="copyResult()">העתק</button>
+          <div class="result-actions">
+            <button class="edit-btn" onclick="toggleEdit()">✏️ עריכה ידנית</button>
+            <button class="copy-btn" onclick="copyResult()">העתק</button>
+          </div>
         </div>
         <div class="result-text" id="resultText"></div>
+        <textarea class="result-textarea" id="resultTextarea" onchange="syncText(this.value)"></textarea>
+
+        <!-- AI Fix Section -->
+        <div class="ai-fix-section" id="aiFix">
+          <div class="ai-fix-label">🤖 תיקון בעזרת AI — כתוב מה לשנות:</div>
+          <div class="ai-fix-row">
+            <input type="text" class="ai-fix-input" id="fixInput" placeholder="לדוגמה: שנה את השעה ל-14:30, הוסף שהמשאית הייתה ירוקה...">
+            <button class="ai-fix-btn" onclick="fixWithAI()">תקן ✨</button>
+          </div>
+        </div>
       </div>
+
+      <!-- Show/Hide AI Fix Button -->
+      <button id="showFixBtn" onclick="toggleAIFix()" style="display:none;width:100%;margin-top:8px;padding:11px;background:var(--green-pale);color:var(--green-mid);border:1.5px solid var(--green-accent);border-radius:var(--radius);font-family:'Heebo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+        🤖 תיקון בעזרת AI
+      </button>
 
       <!-- Export Section -->
       <div class="export-section" id="exportSection">
@@ -246,12 +276,11 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         <button class="download-btn" onclick="downloadWord()">⬇️ הורד קובץ Word לטלפון</button>
       </div>
 
-      <div style="margin-top:10px; display:none" id="saveSection">
+      <div style="margin-top:10px;display:none" id="saveSection">
         <button style="width:100%;padding:13px;background:var(--green-pale);color:var(--green-dark);border:1.5px solid var(--green-accent);border-radius:var(--radius);font-family:'Heebo',sans-serif;font-size:14px;font-weight:600;cursor:pointer;" onclick="saveReport()">💾 שמור לארכיון</button>
       </div>
     </div>
 
-    <!-- HISTORY VIEW -->
     <div class="view" id="view-history">
       <div class="section-title">אירועים שמורים</div>
       <div id="historyList"></div>
@@ -259,7 +288,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
   </div>
 </div>
 
-<!-- Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -276,8 +304,9 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 <script>
 const PROXY = 'https://ynshouf-proxy.fonzoahrak.workers.dev';
 let uploadedImages = [];
+let isEditMode = false;
+let isAIFixVisible = false;
 
-// Init
 document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
 function showToast(msg) {
@@ -300,7 +329,7 @@ function handleImages(input) {
   files.forEach(file => {
     const reader = new FileReader();
     reader.onload = e => {
-      uploadedImages.push({ src: e.target.result, name: file.name });
+      uploadedImages.push({ src: e.target.result, name: file.name, desc: '' });
       renderImages();
     };
     reader.readAsDataURL(file);
@@ -311,13 +340,20 @@ function handleImages(input) {
 function renderImages() {
   const grid = document.getElementById('imgGrid');
   const count = document.getElementById('imgCount');
-  grid.innerHTML = uploadedImages.map((img, i) => `
-    <div class="img-thumb">
-      <img src="${img.src}" alt="תמונה ${i+1}">
-      <button class="img-thumb-del" onclick="removeImage(${i})">×</button>
-    </div>
-  `).join('');
-  count.textContent = uploadedImages.length > 0 ? `${uploadedImages.length} תמונות נבחרו` : '';
+  grid.innerHTML = uploadedImages.map((img, i) => {
+    const num = String(i + 1).padStart(2, '0');
+    return `
+      <div class="img-card">
+        <div class="img-card-header">
+          <span class="img-card-num">תמונה מספר ${num}</span>
+          <button class="img-card-del" onclick="removeImage(${i})">×</button>
+        </div>
+        <img src="${img.src}" alt="תמונה ${num}">
+        <input type="text" value="${img.desc||''}" onchange="uploadedImages[${i}].desc=this.value" placeholder="תיאור מה רואים בתמונה...">
+      </div>
+    `;
+  }).join('');
+  count.textContent = uploadedImages.length > 0 ? `${uploadedImages.length} תמונות` : '';
 }
 
 function removeImage(i) {
@@ -346,12 +382,19 @@ async function generateReport() {
 פרטים: תאריך: ${dateFormatted}, שעה: ${time||'לא ידועה'}, סוג: ${eventType}, מיקום: ${location}, לוחית: ${plate||'לא ידועה'}, רכב: ${vehicle||'לא ידוע'}, בעלים: ${owner||'לא ידוע'}, תיעוד: ${documentation}, תיאור: ${description}, הערות: ${notes||'אין'}.
 כתוב רק גוף הטקסט, ללא כותרת.`;
 
+  await callAI(prompt, true);
+}
+
+async function callAI(prompt, isNew) {
   const btn = document.getElementById('genBtn');
-  btn.disabled = true;
+  if (isNew) btn.disabled = true;
   document.getElementById('loadingBar').style.display = 'block';
-  document.getElementById('resultBox').style.display = 'none';
-  document.getElementById('exportSection').style.display = 'none';
-  document.getElementById('saveSection').style.display = 'none';
+  if (isNew) {
+    document.getElementById('resultBox').style.display = 'none';
+    document.getElementById('exportSection').style.display = 'none';
+    document.getElementById('saveSection').style.display = 'none';
+    document.getElementById('showFixBtn').style.display = 'none';
+  }
 
   try {
     const response = await fetch(PROXY, {
@@ -361,27 +404,100 @@ async function generateReport() {
     });
     const data = await response.json();
     const text = data.text || 'שגיאה';
-    document.getElementById('resultText').textContent = text;
+    setResultText(text);
     document.getElementById('resultBox').style.display = 'block';
     document.getElementById('exportSection').style.display = 'block';
     document.getElementById('saveSection').style.display = 'block';
-    document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('showFixBtn').style.display = 'block';
+    if (isNew) document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth' });
+    showToast('הדוח עודכן ✓');
   } catch(e) {
     alert('שגיאה בחיבור. בדוק אינטרנט.');
   }
 
-  btn.disabled = false;
+  if (isNew) btn.disabled = false;
   document.getElementById('loadingBar').style.display = 'none';
 }
 
+function setResultText(text) {
+  document.getElementById('resultText').textContent = text;
+  document.getElementById('resultTextarea').value = text;
+}
+
+function getResultText() {
+  if (isEditMode) return document.getElementById('resultTextarea').value;
+  return document.getElementById('resultText').textContent;
+}
+
+function syncText(val) {
+  document.getElementById('resultText').textContent = val;
+}
+
+// Toggle manual edit mode
+function toggleEdit() {
+  isEditMode = !isEditMode;
+  const text = document.getElementById('resultText');
+  const textarea = document.getElementById('resultTextarea');
+  const btn = document.querySelector('.edit-btn');
+
+  if (isEditMode) {
+    textarea.value = text.textContent;
+    text.style.display = 'none';
+    textarea.style.display = 'block';
+    textarea.style.height = textarea.scrollHeight + 'px';
+    btn.textContent = '✅ סיים עריכה';
+    btn.style.background = 'rgba(91,163,115,0.3)';
+  } else {
+    text.textContent = textarea.value;
+    text.style.display = 'block';
+    textarea.style.display = 'none';
+    btn.textContent = '✏️ עריכה ידנית';
+    btn.style.background = '';
+  }
+}
+
+// Toggle AI fix section
+function toggleAIFix() {
+  isAIFixVisible = !isAIFixVisible;
+  const section = document.getElementById('aiFix');
+  const btn = document.getElementById('showFixBtn');
+  section.style.display = isAIFixVisible ? 'block' : 'none';
+  btn.textContent = isAIFixVisible ? '✖ סגור תיקון AI' : '🤖 תיקון בעזרת AI';
+}
+
+// Fix with AI
+async function fixWithAI() {
+  const fixNote = document.getElementById('fixInput').value.trim();
+  if (!fixNote) { alert('יש לכתוב מה לשנות'); return; }
+
+  const currentText = getResultText();
+  const prompt = `להלן דוח אכיפה סביבתי רשמי בעברית:
+
+${currentText}
+
+אנא תקן את הדוח לפי ההוראות הבאות: ${fixNote}
+
+חשוב: שמור על אותו סגנון רשמי ועובדתי. החזר רק את הטקסט המתוקן ללא כותרות או הסברים.`;
+
+  const fixBtn = document.querySelector('.ai-fix-btn');
+  fixBtn.textContent = '⏳';
+  fixBtn.disabled = true;
+
+  await callAI(prompt, false);
+
+  fixBtn.textContent = 'תקן ✨';
+  fixBtn.disabled = false;
+  document.getElementById('fixInput').value = '';
+}
+
 function copyResult() {
-  navigator.clipboard.writeText(document.getElementById('resultText').textContent);
+  navigator.clipboard.writeText(getResultText());
   showToast('הטקסט הועתק ✓');
 }
 
 // Word document generation
 async function buildWordDoc() {
-  const { Document, Paragraph, TextRun, ImageRun, HeadingLevel, AlignmentType, Packer } = docx;
+  const { Document, Paragraph, TextRun, ImageRun, AlignmentType, Packer } = docx;
 
   const date = document.getElementById('date').value;
   const eventType = document.getElementById('event_type').value;
@@ -389,74 +505,37 @@ async function buildWordDoc() {
   const plate = document.getElementById('plate').value;
   const vehicle = document.getElementById('vehicle').value;
   const owner = document.getElementById('owner').value;
-  const reportText = document.getElementById('resultText').textContent;
+  const reportText = getResultText();
   const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
 
   const children = [];
 
-  // Header
-  children.push(new Paragraph({
-    children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, size: 28, rightToLeft: true })],
-    alignment: AlignmentType.CENTER,
-  }));
-  children.push(new Paragraph({
-    children: [new TextRun({ text: 'ינשו״פ — יחידה נגד שריפות והשלכות פסולת', size: 22, rightToLeft: true })],
-    alignment: AlignmentType.CENTER,
-  }));
+  children.push(new Paragraph({ children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, size: 28, rightToLeft: true })], alignment: AlignmentType.CENTER }));
+  children.push(new Paragraph({ children: [new TextRun({ text: 'ינשו״פ — יחידה נגד שריפות והשלכות פסולת', size: 22, rightToLeft: true })], alignment: AlignmentType.CENTER }));
   children.push(new Paragraph({ text: '' }));
-  children.push(new Paragraph({
-    children: [new TextRun({ text: 'דוח פעולה', bold: true, size: 28, rightToLeft: true })],
-    alignment: AlignmentType.CENTER,
-  }));
+  children.push(new Paragraph({ children: [new TextRun({ text: 'דוח פעולה', bold: true, size: 28, rightToLeft: true })], alignment: AlignmentType.CENTER }));
   children.push(new Paragraph({ text: '' }));
 
-  // Details table
-  const details = [
-    ['תאריך', dateFormatted],
-    ['סוג אירוע', eventType],
-    ['מיקום', location],
-    ['לוחית רישוי', plate || 'לא ידועה'],
-    ['סוג רכב', vehicle || 'לא ידוע'],
-    ['בעלים/מבצע', owner || 'לא ידוע'],
-  ];
-
+  const details = [['תאריך', dateFormatted], ['סוג אירוע', eventType], ['מיקום', location], ['לוחית רישוי', plate||'לא ידועה'], ['סוג רכב', vehicle||'לא ידוע'], ['בעלים/מבצע', owner||'לא ידוע']];
   details.forEach(([label, value]) => {
-    children.push(new Paragraph({
-      children: [
-        new TextRun({ text: `${label}: `, bold: true, rightToLeft: true }),
-        new TextRun({ text: value, rightToLeft: true }),
-      ],
-      alignment: AlignmentType.RIGHT,
-    }));
+    children.push(new Paragraph({ children: [new TextRun({ text: `${label}: `, bold: true, rightToLeft: true }), new TextRun({ text: value, rightToLeft: true })], alignment: AlignmentType.RIGHT }));
   });
 
   children.push(new Paragraph({ text: '' }));
-  children.push(new Paragraph({
-    children: [new TextRun({ text: 'מהות האירוע', bold: true, size: 26, rightToLeft: true })],
-    alignment: AlignmentType.RIGHT,
-  }));
+  children.push(new Paragraph({ children: [new TextRun({ text: 'מהות האירוע', bold: true, size: 26, rightToLeft: true })], alignment: AlignmentType.RIGHT }));
   children.push(new Paragraph({ text: '' }));
 
-  // Report text paragraphs
   reportText.split('\n').forEach(line => {
-    if (line.trim()) {
-      children.push(new Paragraph({
-        children: [new TextRun({ text: line, rightToLeft: true, size: 22 })],
-        alignment: AlignmentType.RIGHT,
-      }));
-    }
+    if (line.trim()) children.push(new Paragraph({ children: [new TextRun({ text: line, rightToLeft: true, size: 22 })], alignment: AlignmentType.RIGHT }));
   });
 
-  // Images
   if (uploadedImages.length > 0) {
     children.push(new Paragraph({ text: '' }));
-    children.push(new Paragraph({
-      children: [new TextRun({ text: 'תמונות מהשטח', bold: true, size: 26, rightToLeft: true })],
-      alignment: AlignmentType.RIGHT,
-    }));
+    children.push(new Paragraph({ children: [new TextRun({ text: 'תמונות מהשטח', bold: true, size: 26, rightToLeft: true })], alignment: AlignmentType.RIGHT }));
 
     for (let i = 0; i < uploadedImages.length; i++) {
       const img = uploadedImages[i];
+      const num = String(i + 1).padStart(2, '0');
       try {
         const base64 = img.src.split(',')[1];
         const binary = atob(base64);
@@ -465,24 +544,18 @@ async function buildWordDoc() {
 
         children.push(new Paragraph({ text: '' }));
         children.push(new Paragraph({
-          children: [new TextRun({ text: `תמונה ${i+1}`, bold: true, rightToLeft: true })],
+          children: [new TextRun({ text: `תמונה מספר ${num} : ${img.desc || ''}`, bold: true, rightToLeft: true, size: 22 })],
           alignment: AlignmentType.RIGHT,
         }));
         children.push(new Paragraph({
-          children: [new ImageRun({
-            data: bytes,
-            transformation: { width: 400, height: 300 },
-            type: 'jpg',
-          })],
+          children: [new ImageRun({ data: bytes, transformation: { width: 400, height: 300 }, type: 'jpg' })],
           alignment: AlignmentType.CENTER,
         }));
-      } catch(e) {
-        console.error('Image error', e);
-      }
+      } catch(e) { console.error('Image error', e); }
     }
   }
 
-  const doc = new Document({ sections: [{ properties: { }, children }] });
+  const doc = new Document({ sections: [{ properties: {}, children }] });
   return await Packer.toBlob(doc);
 }
 
@@ -499,9 +572,7 @@ async function downloadWord() {
     a.click();
     URL.revokeObjectURL(url);
     showToast('הקובץ הורד בהצלחה ✓');
-  } catch(e) {
-    alert('שגיאה ביצירת הקובץ');
-  }
+  } catch(e) { alert('שגיאה ביצירת הקובץ'); }
   btn.textContent = '⬇️ הורד קובץ Word לטלפון';
   btn.disabled = false;
 }
@@ -509,59 +580,33 @@ async function downloadWord() {
 async function sendByEmail() {
   const email = document.getElementById('emailInput').value.trim();
   if (!email) { alert('יש להכניס כתובת מייל'); return; }
-
   const btn = document.querySelector('.send-btn');
   btn.textContent = '⏳';
   btn.disabled = true;
-
   try {
     const blob = await buildWordDoc();
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result.split(',')[1];
-      const reportText = document.getElementById('resultText').textContent;
       const eventType = document.getElementById('event_type').value;
       const date = document.getElementById('date').value;
       const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
-
       const response = await fetch(PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'send_email',
-          to: email,
-          subject: `דוח אכיפה — ${eventType} — ${dateFormatted}`,
-          body: reportText,
-          attachment: base64,
-          filename: `דוח_אכיפה_${dateFormatted}.docx`
-        })
+        body: JSON.stringify({ action: 'send_email', to: email, subject: `דוח אכיפה — ${eventType} — ${dateFormatted}`, body: getResultText(), attachment: base64, filename: `דוח_אכיפה_${dateFormatted}.docx` })
       });
-
       const data = await response.json();
-      if (data.success) {
-        showToast(`המייל נשלח ל-${email} ✓`);
-      } else {
-        showToast('שגיאה בשליחת המייל');
-      }
+      showToast(data.success ? `המייל נשלח ל-${email} ✓` : 'שגיאה בשליחת המייל');
     };
     reader.readAsDataURL(blob);
-  } catch(e) {
-    alert('שגיאה. נסה שוב.');
-  }
-
+  } catch(e) { alert('שגיאה. נסה שוב.'); }
   btn.textContent = 'שלח 📧';
   btn.disabled = false;
 }
 
 function saveReport() {
-  const report = {
-    id: Date.now(),
-    date: document.getElementById('date').value,
-    type: document.getElementById('event_type').value,
-    location: document.getElementById('location').value,
-    text: document.getElementById('resultText').textContent,
-    savedAt: new Date().toISOString()
-  };
+  const report = { id: Date.now(), date: document.getElementById('date').value, type: document.getElementById('event_type').value, location: document.getElementById('location').value, text: getResultText(), savedAt: new Date().toISOString() };
   const history = JSON.parse(localStorage.getItem('reports') || '[]');
   history.unshift(report);
   localStorage.setItem('reports', JSON.stringify(history));
