@@ -161,6 +161,18 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 
   <div class="content">
     <div class="view active" id="view-form">
+      <div class="section-title">פרטי הפקח</div>
+      <div class="field-row">
+        <div class="field">
+          <label>שם פקח</label>
+          <input type="text" id="inspector_name" placeholder="שם מלא" oninput="saveInspector()">
+        </div>
+        <div class="field">
+          <label>מספר פקח</label>
+          <input type="text" id="inspector_id" placeholder="מספר" oninput="saveInspector()">
+        </div>
+      </div>
+
       <div class="section-title">פרטי האירוע</div>
       <div class="field-row">
         <div class="field">
@@ -173,7 +185,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         </div>
       </div>
       <div class="field">
-        <label>סוג האירוע</label>
+        <label>סוג האירוע <span style="color:var(--danger)">*</span></label>
         <select id="event_type">
           <option value="">-- בחר סוג --</option>
           <option>השלכת פסולת בניין</option>
@@ -185,7 +197,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         </select>
       </div>
       <div class="field">
-        <label>מיקום / אזור</label>
+        <label>מיקום / אזור <span style="color:var(--danger)">*</span></label>
         <input type="text" id="location" placeholder="לדוגמה: בין אופקים לבסיס חצרים">
       </div>
 
@@ -215,7 +227,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         </select>
       </div>
       <div class="field">
-        <label>תיאור מה קרה (במילים שלך)</label>
+        <label>תיאור מה קרה (במילים שלך) <span style="color:var(--danger)">*</span></label>
         <textarea id="description" placeholder="תאר מה ראית בשטח..."></textarea>
       </div>
       <div class="field">
@@ -313,6 +325,19 @@ let isAIFixVisible = false;
 
 document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
+// Load saved inspector details
+(function loadInspector() {
+  const saved = JSON.parse(localStorage.getItem('inspector') || '{}');
+  if (saved.name) document.getElementById('inspector_name').value = saved.name;
+  if (saved.id) document.getElementById('inspector_id').value = saved.id;
+})();
+
+function saveInspector() {
+  const name = document.getElementById('inspector_name').value;
+  const id = document.getElementById('inspector_id').value;
+  localStorage.setItem('inspector', JSON.stringify({ name, id }));
+}
+
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -370,7 +395,7 @@ async function generateReport() {
   const eventType = document.getElementById('event_type').value;
   const location = document.getElementById('location').value;
   const description = document.getElementById('description').value;
-  if (!eventType || !location || !description) { alert('יש למלא: סוג אירוע, מיקום ותיאור'); return; }
+  if (!eventType || !location || !description) { alert('שדות חובה (מסומנים ב-*): סוג אירוע, מיקום ותיאור'); return; }
 
   const date = document.getElementById('date').value;
   const time = document.getElementById('time').value;
@@ -379,11 +404,28 @@ async function generateReport() {
   const owner = document.getElementById('owner').value;
   const documentation = document.getElementById('documentation').value;
   const notes = document.getElementById('notes').value;
+  const inspectorName = document.getElementById('inspector_name').value;
+  const inspectorId = document.getElementById('inspector_id').value;
   const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
+
+  // Build details string — only include fields that have values
+  const details = [];
+  if (dateFormatted) details.push(`תאריך: ${dateFormatted}`);
+  if (time) details.push(`שעה: ${time}`);
+  details.push(`סוג: ${eventType}`);
+  details.push(`מיקום: ${location}`);
+  if (plate) details.push(`לוחית: ${plate}`);
+  if (vehicle) details.push(`רכב: ${vehicle}`);
+  if (owner) details.push(`בעלים/מבצע: ${owner}`);
+  if (documentation) details.push(`תיעוד: ${documentation}`);
+  if (inspectorName) details.push(`פקח: ${inspectorName}${inspectorId ? ' מס\' ' + inspectorId : ''}`);
+  if (notes) details.push(`הערות: ${notes}`);
 
   const prompt = `אתה פקח סביבתי ינשו"פ של רשות הטבע והגנים. כתוב סעיף "מהות האירוע" לדוח אכיפה רשמי בעברית.
 סגנון: רשמי, עובדתי, ענייני. גוף ראשון יחיד. פסקאות קצרות. בלי כותרות פנימיות. התחל ב"במסגרת פעילות אכיפה שוטפת...".
-פרטים: תאריך: ${dateFormatted}, שעה: ${time||'לא ידועה'}, סוג: ${eventType}, מיקום: ${location}, לוחית: ${plate||'לא ידועה'}, רכב: ${vehicle||'לא ידוע'}, בעלים: ${owner||'לא ידוע'}, תיעוד: ${documentation}, תיאור: ${description}, הערות: ${notes||'אין'}.
+אם חסר מידע מסוים (כגון לוחית רישוי) — אל תציין "לא ידוע", פשוט השמט אותו מהדוח.
+פרטים: ${details.join(', ')}.
+תיאור: ${description}.
 כתוב רק גוף הטקסט, ללא כותרת.`;
 
   await callAI(prompt, true);
