@@ -599,67 +599,248 @@ function copyResult() {
   showToast('הטקסט הועתק ✓');
 }
 
-// Word document generation
+// ── helpers ──────────────────────────────────────────────────────────────────
+function p(runs, align, spacingAfter) {
+  const { Paragraph, AlignmentType } = docx;
+  return new Paragraph({
+    children: runs,
+    alignment: align || AlignmentType.RIGHT,
+    spacing: { after: spacingAfter !== undefined ? spacingAfter : 80 },
+    bidirectional: true,
+  });
+}
+function t(text, opts) {
+  return new docx.TextRun({ text, rightToLeft: true, font: 'David', size: 22, ...opts });
+}
+function emptyLine() { return p([t('')], docx.AlignmentType.RIGHT, 40); }
+
+function borderParagraph(text, color) {
+  // Green section header like "מהות האירוע" in the original
+  const { Paragraph, TextRun, AlignmentType, BorderStyle } = docx;
+  return new Paragraph({
+    children: [new TextRun({ text, bold: true, color: color || '1a6b3a', font: 'David', size: 24, rightToLeft: true })],
+    alignment: AlignmentType.RIGHT,
+    bidirectional: true,
+    spacing: { before: 160, after: 80 },
+  });
+}
+
+function tableRow(label, value) {
+  const { TableRow, TableCell, Paragraph, TextRun, AlignmentType, WidthType, BorderStyle } = docx;
+  const cellBorder = { style: BorderStyle.SINGLE, size: 4, color: 'cccccc' };
+  const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
+
+  return new TableRow({
+    children: [
+      // Value cell (left side in RTL = right column visually)
+      new TableCell({
+        children: [new Paragraph({ children: [new TextRun({ text: value || '—', font: 'David', size: 20, rightToLeft: true })], alignment: AlignmentType.RIGHT, bidirectional: true })],
+        width: { size: 65, type: WidthType.PERCENTAGE },
+        borders,
+      }),
+      // Label cell (right side in RTL = left column visually)
+      new TableCell({
+        children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, font: 'David', size: 20, rightToLeft: true })], alignment: AlignmentType.RIGHT, bidirectional: true })],
+        width: { size: 35, type: WidthType.PERCENTAGE },
+        borders,
+        shading: { fill: 'f2f2f2' },
+      }),
+    ],
+  });
+}
+
+// ── main build ────────────────────────────────────────────────────────────────
 async function buildWordDoc() {
-  const { Document, Paragraph, TextRun, ImageRun, AlignmentType, Packer } = docx;
+  const { Document, Paragraph, TextRun, ImageRun, Table, AlignmentType, Packer,
+          BorderStyle, WidthType, PageBreak, SectionType } = docx;
 
-  const date = document.getElementById('date').value;
-  const eventType = document.getElementById('event_type').value;
-  const location = document.getElementById('location').value;
-  const plate = document.getElementById('plate').value;
-  const vehicle = document.getElementById('vehicle').value;
-  const owner = document.getElementById('owner').value;
-  const reportText = getResultText();
-  const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
+  // Gather form values
+  const date           = document.getElementById('date').value;
+  const time           = document.getElementById('time').value;
+  const eventType      = document.getElementById('event_type').value;
+  const location       = document.getElementById('location').value;
+  const plate          = document.getElementById('plate').value;
+  const vehicle        = document.getElementById('vehicle').value;
+  const owner          = document.getElementById('owner').value;
+  const documentation  = document.getElementById('documentation').value;
+  const notes          = document.getElementById('notes').value;
+  const inspName       = document.getElementById('inspector_name').value;
+  const inspId         = document.getElementById('inspector_id').value;
+  const reportText     = getResultText();
+  const dateFormatted  = date ? new Date(date).toLocaleDateString('he-IL') : '';
 
-  const children = [];
+  // ── PAGE 1 ───────────────────────────────────────────────────────────────
+  const page1 = [];
 
-  children.push(new Paragraph({ children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, size: 28, rightToLeft: true })], alignment: AlignmentType.CENTER }));
-  children.push(new Paragraph({ children: [new TextRun({ text: 'ינשו״פ — יחידה נגד שריפות והשלכות פסולת', size: 22, rightToLeft: true })], alignment: AlignmentType.CENTER }));
-  children.push(new Paragraph({ text: '' }));
-  children.push(new Paragraph({ children: [new TextRun({ text: 'דוח פעולה', bold: true, size: 28, rightToLeft: true })], alignment: AlignmentType.CENTER }));
-  children.push(new Paragraph({ text: '' }));
+  // Header line 1 — org name bold centered
+  page1.push(new Paragraph({
+    children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, font: 'David', size: 26, rightToLeft: true })],
+    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
+  }));
 
-  const details = [['תאריך', dateFormatted], ['סוג אירוע', eventType], ['מיקום', location], ['לוחית רישוי', plate||'לא ידועה'], ['סוג רכב', vehicle||'לא ידוע'], ['בעלים/מבצע', owner||'לא ידוע']];
-  details.forEach(([label, value]) => {
-    children.push(new Paragraph({ children: [new TextRun({ text: `${label}: `, bold: true, rightToLeft: true }), new TextRun({ text: value, rightToLeft: true })], alignment: AlignmentType.RIGHT }));
-  });
+  // Header line 2 — unit name
+  page1.push(new Paragraph({
+    children: [new TextRun({ text: 'ינשו"פ — יחידה נגד שריפות והשלכות פסולת', bold: true, font: 'David', size: 22, rightToLeft: true })],
+    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '1a6b3a' } },
+  }));
 
-  children.push(new Paragraph({ text: '' }));
-  children.push(new Paragraph({ children: [new TextRun({ text: 'מהות האירוע', bold: true, size: 26, rightToLeft: true })], alignment: AlignmentType.RIGHT }));
-  children.push(new Paragraph({ text: '' }));
+  // Inspector line
+  const inspLine = [inspName, inspId ? `מספר עובד ${inspId}` : '', 'פקח ינשו"פ, רט"ג'].filter(Boolean).join(' | ');
+  if (inspLine.trim()) {
+    page1.push(emptyLine());
+    page1.push(p([t(inspLine, { size: 20 })], AlignmentType.RIGHT));
+  }
 
+  // Date
+  if (dateFormatted) {
+    page1.push(p([t(dateFormatted, { size: 20 })], AlignmentType.RIGHT, 40));
+  }
+
+  page1.push(emptyLine());
+
+  // "דוח פעולה" title underlined center
+  page1.push(new Paragraph({
+    children: [new TextRun({ text: 'דוח פעולה', bold: true, underline: {}, font: 'David', size: 28, rightToLeft: true })],
+    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 120 },
+  }));
+
+  // Event type as subtitle (green, centered)
+  if (eventType) {
+    page1.push(new Paragraph({
+      children: [new TextRun({ text: eventType, bold: true, color: '1a6b3a', font: 'David', size: 26, rightToLeft: true })],
+      alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 200 },
+    }));
+  }
+
+  // "מהות האירוע" section header
+  page1.push(borderParagraph('מהות האירוע'));
+
+  // Report body text
   reportText.split('\n').forEach(line => {
-    if (line.trim()) children.push(new Paragraph({ children: [new TextRun({ text: line, rightToLeft: true, size: 22 })], alignment: AlignmentType.RIGHT }));
+    if (line.trim()) {
+      page1.push(new Paragraph({
+        children: [new TextRun({ text: line, font: 'David', size: 22, rightToLeft: true })],
+        alignment: AlignmentType.RIGHT, bidirectional: true,
+        spacing: { after: 60 }, indent: { right: 0 },
+      }));
+    }
   });
 
-  if (uploadedImages.length > 0) {
-    children.push(new Paragraph({ text: '' }));
-    children.push(new Paragraph({ children: [new TextRun({ text: 'תמונות מהשטח', bold: true, size: 26, rightToLeft: true })], alignment: AlignmentType.RIGHT }));
+  page1.push(emptyLine());
 
-    for (let i = 0; i < uploadedImages.length; i++) {
-      const img = uploadedImages[i];
-      const num = String(i + 1).padStart(2, '0');
+  // ── PAGE 2 — details table ────────────────────────────────────────────────
+  const page2 = [];
+
+  // Page header (same as page 1)
+  page2.push(new Paragraph({
+    children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, font: 'David', size: 26, rightToLeft: true })],
+    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
+  }));
+  page2.push(new Paragraph({
+    children: [new TextRun({ text: 'ינשו"פ — יחידה נגד שריפות והשלכות פסולת', bold: true, font: 'David', size: 22, rightToLeft: true })],
+    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '1a6b3a' } },
+  }));
+  if (inspLine.trim()) page2.push(p([t(inspLine, { size: 20 })], AlignmentType.RIGHT));
+  page2.push(emptyLine());
+
+  // "כללי" section header
+  page2.push(borderParagraph('כללי'));
+
+  // General info table
+  const generalRows = [];
+  generalRows.push(tableRow('קטגוריה', 'אכיפה — דוח פעולה'));
+  if (inspName) generalRows.push(tableRow('מדווח', `${inspName} (פקח ינשו"פ)`));
+  if (dateFormatted) generalRows.push(tableRow('תאריך', dateFormatted));
+  if (time) generalRows.push(tableRow('זמן', time));
+  if (location) generalRows.push(tableRow('מיקום', location));
+
+  page2.push(new Table({
+    rows: generalRows,
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    bidirectional: true,
+  }));
+
+  page2.push(emptyLine());
+
+  // "טבלת שדות" section header
+  page2.push(borderParagraph('טבלת שדות'));
+
+  // Fields table
+  const fieldRows = [];
+  if (eventType) fieldRows.push(tableRow('סוג פסולת / אירוע', eventType));
+  if (plate) fieldRows.push(tableRow('לוחית זיהוי', plate));
+  if (vehicle) fieldRows.push(tableRow('סוג רכב', vehicle));
+  if (owner) fieldRows.push(tableRow('בעלות', owner));
+  if (documentation) fieldRows.push(tableRow('תיעוד שנאסף', documentation));
+  if (notes) fieldRows.push(tableRow('הערות', notes));
+
+  if (fieldRows.length > 0) {
+    page2.push(new Table({
+      rows: fieldRows,
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      bidirectional: true,
+    }));
+  }
+
+  // ── IMAGES — 2 per page ─────────────────────────────────────────────────
+  const imagePages = [];
+
+  for (let i = 0; i < uploadedImages.length; i += 2) {
+    const imgPage = [];
+
+    // Page header
+    imgPage.push(new Paragraph({
+      children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, font: 'David', size: 26, rightToLeft: true })],
+      alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
+    }));
+    imgPage.push(new Paragraph({
+      children: [new TextRun({ text: 'ינשו"פ — יחידה נגד שריפות והשלכות פסולת', bold: true, font: 'David', size: 22, rightToLeft: true })],
+      alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 80 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '1a6b3a' } },
+    }));
+    imgPage.push(emptyLine());
+
+    // 2 images per page
+    for (let j = i; j < Math.min(i + 2, uploadedImages.length); j++) {
+      const img = uploadedImages[j];
+      const num = String(j + 1).padStart(2, '0');
+
       try {
         const base64 = img.src.split(',')[1];
         const binary = atob(base64);
         const bytes = new Uint8Array(binary.length);
-        for (let j = 0; j < binary.length; j++) bytes[j] = binary.charCodeAt(j);
+        for (let k = 0; k < binary.length; k++) bytes[k] = binary.charCodeAt(k);
 
-        children.push(new Paragraph({ text: '' }));
-        children.push(new Paragraph({
-          children: [new TextRun({ text: `תמונה מספר ${num} : ${img.desc || ''}`, bold: true, rightToLeft: true, size: 22 })],
-          alignment: AlignmentType.RIGHT,
-        }));
-        children.push(new Paragraph({
-          children: [new ImageRun({ data: bytes, transformation: { width: 400, height: 300 }, type: 'jpg' })],
-          alignment: AlignmentType.CENTER,
+        imgPage.push(new Paragraph({
+          children: [new ImageRun({ data: bytes, transformation: { width: 460, height: 290 }, type: 'jpg' })],
+          alignment: AlignmentType.CENTER, spacing: { after: 60 },
         }));
       } catch(e) { console.error('Image error', e); }
+
+      const caption = `תמונה מספר ${num} : ${img.desc || ''}`;
+      imgPage.push(new Paragraph({
+        children: [new TextRun({ text: caption, bold: true, font: 'David', size: 22, rightToLeft: true })],
+        alignment: AlignmentType.RIGHT, bidirectional: true,
+        spacing: { after: (j % 2 === 0 && j + 1 < uploadedImages.length) ? 180 : 60 },
+      }));
     }
+
+    imagePages.push(imgPage);
   }
 
-  const doc = new Document({ sections: [{ properties: {}, children }] });
+  // ── Assemble document with page breaks ───────────────────────────────────
+  const sections = [
+    { properties: {}, children: page1 },
+    { properties: { type: SectionType.NEXT_PAGE }, children: page2 },
+    ...imagePages.map(imgPage => ({
+      properties: { type: SectionType.NEXT_PAGE },
+      children: imgPage,
+    })),
+  ];
+
+  const doc = new Document({ sections });
   return await Packer.toBlob(doc);
 }
 
