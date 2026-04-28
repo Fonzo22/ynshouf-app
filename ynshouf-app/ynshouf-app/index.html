@@ -13,7 +13,6 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root {
   --green-dark: #1a3a2a;
@@ -275,8 +274,8 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
           <input type="email" class="email-input" id="emailInput" placeholder="כתובת מייל לשליחה" dir="ltr">
           <button class="send-btn" onclick="sendByEmail()">שלח 📧</button>
         </div>
-        <div class="email-hint">המייל יישלח עם תוכן הדוח בגוף ההודעה</div>
-        <button class="download-btn" onclick="downloadWord()">⬇️ הורד קובץ Word לטלפון</button>
+        <div class="email-hint">ירד קובץ Word + ייפתח הגימייל מוכן — רק לצרף את הקובץ ולשלוח</div>
+        <button class="download-btn" onclick="downloadWord()">⬇️ הורד קובץ Word בלבד</button>
       </div>
 
       <div style="margin-top:10px;display:none" id="saveSection">
@@ -306,14 +305,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 
 <script>
 const PROXY = 'https://ynshouf-proxy.fonzoahrak.workers.dev';
-
-// EmailJS configuration
-const EMAILJS_PUBLIC_KEY = 'Pz8Ur8g3E0-qV9dkt';
-const EMAILJS_SERVICE_ID = 'service_su3bxpf';
-const EMAILJS_TEMPLATE_ID = 'template_hmzwazg';
-
-// Initialize EmailJS
-emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
 
 let uploadedImages = [];
 let isEditMode = false;
@@ -589,7 +580,7 @@ async function downloadWord() {
   btn.disabled = false;
 }
 
-// Send by email via EmailJS
+// Send by email — downloads Word file + opens Gmail with everything pre-filled
 async function sendByEmail() {
   const email = document.getElementById('emailInput').value.trim();
   if (!email) { alert('יש להכניס כתובת מייל'); return; }
@@ -601,54 +592,48 @@ async function sendByEmail() {
 
   try {
     const date = document.getElementById('date').value;
-    const time = document.getElementById('time').value;
     const eventType = document.getElementById('event_type').value;
     const location = document.getElementById('location').value;
-    const plate = document.getElementById('plate').value;
-    const vehicle = document.getElementById('vehicle').value;
-    const owner = document.getElementById('owner').value;
     const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
 
-    // Build event subject for the email title
-    const eventSubject = `${eventType} — ${location} — ${dateFormatted}`;
+    // Step 1: Generate and download the Word file
+    const blob = await buildWordDoc();
+    const filename = `דוח_אכיפה_${dateFormatted.replace(/\./g,'-')}.docx`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 
-    // Build event time string
-    const eventTime = `${dateFormatted}${time ? ' בשעה ' + time : ''}`;
+    // Step 2: Build email parameters
+    const subject = `דוח אכיפה — ${eventType} — ${location} — ${dateFormatted}`;
+    const body = `שלום,
 
-    // Build a richer message with all event details
-    let fullMessage = getResultText();
+מצורף דוח אכיפה סביבתי לאירוע שאירע בתאריך ${dateFormatted}.
 
-    const extraDetails = [];
-    if (plate) extraDetails.push(`לוחית רישוי: ${plate}`);
-    if (vehicle) extraDetails.push(`סוג רכב: ${vehicle}`);
-    if (owner) extraDetails.push(`בעלים/מבצע: ${owner}`);
+מהות האירוע:
+${getResultText()}
 
-    if (extraDetails.length > 0) {
-      fullMessage += '\n\n--- פרטים נוספים ---\n' + extraDetails.join('\n');
-    }
+* יש לצרף את קובץ ה-Word שהורד למכשיר *
 
-    // Send via EmailJS
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: email,
-      event_subject: eventSubject,
-      event_time: eventTime,
-      event_location: location,
-      reporter_name: 'פקח ינשו״פ',
-      event_message: fullMessage,
-      // Backwards-compat fields in case the template still uses them:
-      name: 'ינשו״פ',
-      email: email,
-      message: fullMessage,
-      title: eventSubject,
-      time: eventTime
-    });
+בברכה,
+פקח ינשו״פ
+מועצה אזורית מרחבים / שדות נגב`;
 
-    showToast(`המייל נשלח ל-${email} ✓`);
-    document.getElementById('emailInput').value = '';
+    // Step 3: Open Gmail compose (works great on Android with Gmail as default)
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    showToast('הקובץ ירד — נפתח הגימייל...');
+
+    // Small delay so user sees the download started
+    setTimeout(() => {
+      window.open(gmailUrl, '_blank');
+    }, 800);
+
   } catch(e) {
-    console.error('EmailJS error:', e);
-    const errMsg = e && e.text ? e.text : (e && e.message ? e.message : 'שגיאה לא ידועה');
-    alert('שגיאה בשליחת המייל: ' + errMsg);
+    console.error('Send error:', e);
+    alert('שגיאה: ' + (e.message || 'נסה שוב'));
   }
 
   btn.textContent = 'שלח 📧';
