@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root {
   --green-dark: #1a3a2a;
@@ -106,6 +107,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .email-input { flex: 1; padding: 10px 12px; border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 14px; direction: ltr; outline: none; }
 .email-input:focus { border-color: var(--green-accent); }
 .send-btn { padding: 10px 16px; background: var(--green-mid); color: var(--white); border: none; border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.email-hint { font-size: 11px; color: var(--text-light); margin-bottom: 10px; text-align: center; }
 .download-btn { width: 100%; padding: 13px; background: var(--green-pale); color: var(--green-dark); border: 1.5px solid var(--green-accent); border-radius: var(--radius); font-family: 'Heebo', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
 
 /* Loading */
@@ -268,11 +270,12 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 
       <!-- Export Section -->
       <div class="export-section" id="exportSection">
-        <div class="export-title">📄 ייצוא דוח Word</div>
+        <div class="export-title">📧 שליחת דוח במייל</div>
         <div class="email-row">
           <input type="email" class="email-input" id="emailInput" placeholder="כתובת מייל לשליחה" dir="ltr">
           <button class="send-btn" onclick="sendByEmail()">שלח 📧</button>
         </div>
+        <div class="email-hint">המייל יישלח עם תוכן הדוח בגוף ההודעה</div>
         <button class="download-btn" onclick="downloadWord()">⬇️ הורד קובץ Word לטלפון</button>
       </div>
 
@@ -303,6 +306,15 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 
 <script>
 const PROXY = 'https://ynshouf-proxy.fonzoahrak.workers.dev';
+
+// EmailJS configuration
+const EMAILJS_PUBLIC_KEY = 'Pz8Ur8g3E0-qV9dkt';
+const EMAILJS_SERVICE_ID = 'service_su3bxpf';
+const EMAILJS_TEMPLATE_ID = 'template_hmzwazg';
+
+// Initialize EmailJS
+emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
 let uploadedImages = [];
 let isEditMode = false;
 let isAIFixVisible = false;
@@ -577,30 +589,68 @@ async function downloadWord() {
   btn.disabled = false;
 }
 
+// Send by email via EmailJS
 async function sendByEmail() {
   const email = document.getElementById('emailInput').value.trim();
   if (!email) { alert('יש להכניס כתובת מייל'); return; }
+  if (!email.includes('@')) { alert('כתובת מייל לא תקינה'); return; }
+
   const btn = document.querySelector('.send-btn');
   btn.textContent = '⏳';
   btn.disabled = true;
+
   try {
-    const blob = await buildWordDoc();
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result.split(',')[1];
-      const eventType = document.getElementById('event_type').value;
-      const date = document.getElementById('date').value;
-      const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
-      const response = await fetch(PROXY, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'send_email', to: email, subject: `דוח אכיפה — ${eventType} — ${dateFormatted}`, body: getResultText(), attachment: base64, filename: `דוח_אכיפה_${dateFormatted}.docx` })
-      });
-      const data = await response.json();
-      showToast(data.success ? `המייל נשלח ל-${email} ✓` : 'שגיאה בשליחת המייל');
-    };
-    reader.readAsDataURL(blob);
-  } catch(e) { alert('שגיאה. נסה שוב.'); }
+    const date = document.getElementById('date').value;
+    const time = document.getElementById('time').value;
+    const eventType = document.getElementById('event_type').value;
+    const location = document.getElementById('location').value;
+    const plate = document.getElementById('plate').value;
+    const vehicle = document.getElementById('vehicle').value;
+    const owner = document.getElementById('owner').value;
+    const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
+
+    // Build event subject for the email title
+    const eventSubject = `${eventType} — ${location} — ${dateFormatted}`;
+
+    // Build event time string
+    const eventTime = `${dateFormatted}${time ? ' בשעה ' + time : ''}`;
+
+    // Build a richer message with all event details
+    let fullMessage = getResultText();
+
+    const extraDetails = [];
+    if (plate) extraDetails.push(`לוחית רישוי: ${plate}`);
+    if (vehicle) extraDetails.push(`סוג רכב: ${vehicle}`);
+    if (owner) extraDetails.push(`בעלים/מבצע: ${owner}`);
+
+    if (extraDetails.length > 0) {
+      fullMessage += '\n\n--- פרטים נוספים ---\n' + extraDetails.join('\n');
+    }
+
+    // Send via EmailJS
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email: email,
+      event_subject: eventSubject,
+      event_time: eventTime,
+      event_location: location,
+      reporter_name: 'פקח ינשו״פ',
+      event_message: fullMessage,
+      // Backwards-compat fields in case the template still uses them:
+      name: 'ינשו״פ',
+      email: email,
+      message: fullMessage,
+      title: eventSubject,
+      time: eventTime
+    });
+
+    showToast(`המייל נשלח ל-${email} ✓`);
+    document.getElementById('emailInput').value = '';
+  } catch(e) {
+    console.error('EmailJS error:', e);
+    const errMsg = e && e.text ? e.text : (e && e.message ? e.message : 'שגיאה לא ידועה');
+    alert('שגיאה בשליחת המייל: ' + errMsg);
+  }
+
   btn.textContent = 'שלח 📧';
   btn.disabled = false;
 }
