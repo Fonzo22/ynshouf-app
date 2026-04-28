@@ -612,13 +612,12 @@ function p(runs, align, spacingAfter) {
 function t(text, opts) {
   return new docx.TextRun({ text, rightToLeft: true, font: 'David', size: 22, ...opts });
 }
-function emptyLine() { return p([t('')], docx.AlignmentType.RIGHT, 40); }
+function emptyLine(sp) { return p([t('')], docx.AlignmentType.RIGHT, sp || 40); }
 
-function borderParagraph(text, color) {
-  // Green section header like "מהות האירוע" in the original
-  const { Paragraph, TextRun, AlignmentType, BorderStyle } = docx;
+function borderParagraph(text) {
+  const { Paragraph, TextRun, AlignmentType } = docx;
   return new Paragraph({
-    children: [new TextRun({ text, bold: true, color: color || '1a6b3a', font: 'David', size: 24, rightToLeft: true })],
+    children: [new TextRun({ text, bold: true, color: '1a6b3a', font: 'David', size: 24, rightToLeft: true })],
     alignment: AlignmentType.RIGHT,
     bidirectional: true,
     spacing: { before: 160, after: 80 },
@@ -629,180 +628,164 @@ function tableRow(label, value) {
   const { TableRow, TableCell, Paragraph, TextRun, AlignmentType, WidthType, BorderStyle } = docx;
   const cellBorder = { style: BorderStyle.SINGLE, size: 4, color: 'cccccc' };
   const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
-
   return new TableRow({
     children: [
-      // Value cell (left side in RTL = right column visually)
       new TableCell({
         children: [new Paragraph({ children: [new TextRun({ text: value || '—', font: 'David', size: 20, rightToLeft: true })], alignment: AlignmentType.RIGHT, bidirectional: true })],
-        width: { size: 65, type: WidthType.PERCENTAGE },
-        borders,
+        width: { size: 65, type: WidthType.PERCENTAGE }, borders,
       }),
-      // Label cell (right side in RTL = left column visually)
       new TableCell({
         children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, font: 'David', size: 20, rightToLeft: true })], alignment: AlignmentType.RIGHT, bidirectional: true })],
-        width: { size: 35, type: WidthType.PERCENTAGE },
-        borders,
+        width: { size: 35, type: WidthType.PERCENTAGE }, borders,
         shading: { fill: 'f2f2f2' },
       }),
     ],
   });
 }
 
+// Build page header with RTG logo — matches the original report exactly
+async function buildPageHeader() {
+  const { Paragraph, TextRun, ImageRun, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle } = docx;
+
+  // RTG logo bytes
+  const rtgB64 = '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';
+  const rtgBinary = atob(rtgB64);
+  const rtgBytes = new Uint8Array(rtgBinary.length);
+  for (let i = 0; i < rtgBinary.length; i++) rtgBytes[i] = rtgBinary.charCodeAt(i);
+
+  const cellBorderNone = { style: BorderStyle.NONE, size: 0, color: 'ffffff' };
+  const noBorders = { top: cellBorderNone, bottom: cellBorderNone, left: cellBorderNone, right: cellBorderNone };
+
+  // Header table: [logo | title text]
+  const headerTable = new Table({
+    rows: [
+      new TableRow({
+        children: [
+          // Right cell: RTG logo
+          new TableCell({
+            children: [new Paragraph({
+              children: [new ImageRun({ data: rtgBytes, transformation: { width: 70, height: 56 }, type: 'png' })],
+              alignment: AlignmentType.RIGHT,
+            })],
+            width: { size: 20, type: WidthType.PERCENTAGE },
+            borders: noBorders,
+            verticalAlign: 'center',
+          }),
+          // Left cell: title lines
+          new TableCell({
+            children: [
+              new Paragraph({
+                children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, font: 'David', size: 26, rightToLeft: true })],
+                alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
+              }),
+              new Paragraph({
+                children: [new TextRun({ text: 'ינשו"פ — יחידה נגד שריפות והשלכות פסולת', bold: true, font: 'David', size: 22, rightToLeft: true })],
+                alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 0 },
+              }),
+            ],
+            width: { size: 80, type: WidthType.PERCENTAGE },
+            borders: noBorders,
+            verticalAlign: 'center',
+          }),
+        ],
+      }),
+    ],
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    bidirectional: true,
+  });
+
+  // Green separator line
+  const separator = new Paragraph({
+    children: [new TextRun({ text: '', size: 4 })],
+    border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: '1a6b3a' } },
+    spacing: { after: 80 },
+  });
+
+  return [headerTable, separator];
+}
+
 // ── main build ────────────────────────────────────────────────────────────────
 async function buildWordDoc() {
   const { Document, Paragraph, TextRun, ImageRun, Table, AlignmentType, Packer,
-          BorderStyle, WidthType, PageBreak, SectionType } = docx;
+          BorderStyle, WidthType, SectionType } = docx;
 
-  // Gather form values
-  const date           = document.getElementById('date').value;
-  const time           = document.getElementById('time').value;
-  const eventType      = document.getElementById('event_type').value;
-  const location       = document.getElementById('location').value;
-  const plate          = document.getElementById('plate').value;
-  const vehicle        = document.getElementById('vehicle').value;
-  const owner          = document.getElementById('owner').value;
-  const documentation  = document.getElementById('documentation').value;
-  const notes          = document.getElementById('notes').value;
-  const inspName       = document.getElementById('inspector_name').value;
-  const inspId         = document.getElementById('inspector_id').value;
-  const reportText     = getResultText();
-  const dateFormatted  = date ? new Date(date).toLocaleDateString('he-IL') : '';
+  const date          = document.getElementById('date').value;
+  const time          = document.getElementById('time').value;
+  const eventType     = document.getElementById('event_type').value;
+  const location      = document.getElementById('location').value;
+  const plate         = document.getElementById('plate').value;
+  const vehicle       = document.getElementById('vehicle').value;
+  const owner         = document.getElementById('owner').value;
+  const documentation = document.getElementById('documentation').value;
+  const notes         = document.getElementById('notes').value;
+  const inspName      = document.getElementById('inspector_name').value;
+  const inspId        = document.getElementById('inspector_id').value;
+  const reportText    = getResultText();
+  const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
+
+  const header = await buildPageHeader();
 
   // ── PAGE 1 ───────────────────────────────────────────────────────────────
-  const page1 = [];
+  const page1 = [...header];
 
-  // Header line 1 — org name bold centered
-  page1.push(new Paragraph({
-    children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, font: 'David', size: 26, rightToLeft: true })],
-    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
-  }));
+  const inspLine = [inspName, inspId ? 'מספר עובד ' + inspId : '', 'פקח ינשו"פ, רט"ג'].filter(Boolean).join(' , ');
+  if (inspLine.trim()) page1.push(p([t(inspLine, { size: 20 })], AlignmentType.RIGHT, 20));
+  if (dateFormatted) page1.push(p([t(dateFormatted, { size: 20 })], AlignmentType.RIGHT, 80));
 
-  // Header line 2 — unit name
-  page1.push(new Paragraph({
-    children: [new TextRun({ text: 'ינשו"פ — יחידה נגד שריפות והשלכות פסולת', bold: true, font: 'David', size: 22, rightToLeft: true })],
-    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
-    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '1a6b3a' } },
-  }));
-
-  // Inspector line
-  const inspLine = [inspName, inspId ? `מספר עובד ${inspId}` : '', 'פקח ינשו"פ, רט"ג'].filter(Boolean).join(' | ');
-  if (inspLine.trim()) {
-    page1.push(emptyLine());
-    page1.push(p([t(inspLine, { size: 20 })], AlignmentType.RIGHT));
-  }
-
-  // Date
-  if (dateFormatted) {
-    page1.push(p([t(dateFormatted, { size: 20 })], AlignmentType.RIGHT, 40));
-  }
-
-  page1.push(emptyLine());
-
-  // "דוח פעולה" title underlined center
+  page1.push(emptyLine(60));
   page1.push(new Paragraph({
     children: [new TextRun({ text: 'דוח פעולה', bold: true, underline: {}, font: 'David', size: 28, rightToLeft: true })],
-    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 120 },
+    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 100 },
   }));
 
-  // Event type as subtitle (green, centered)
   if (eventType) {
     page1.push(new Paragraph({
       children: [new TextRun({ text: eventType, bold: true, color: '1a6b3a', font: 'David', size: 26, rightToLeft: true })],
-      alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 200 },
+      alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 180 },
     }));
   }
 
-  // "מהות האירוע" section header
   page1.push(borderParagraph('מהות האירוע'));
-
-  // Report body text
   reportText.split('\n').forEach(line => {
-    if (line.trim()) {
-      page1.push(new Paragraph({
-        children: [new TextRun({ text: line, font: 'David', size: 22, rightToLeft: true })],
-        alignment: AlignmentType.RIGHT, bidirectional: true,
-        spacing: { after: 60 }, indent: { right: 0 },
-      }));
-    }
+    if (line.trim()) page1.push(new Paragraph({
+      children: [new TextRun({ text: line, font: 'David', size: 22, rightToLeft: true })],
+      alignment: AlignmentType.RIGHT, bidirectional: true, spacing: { after: 80 },
+    }));
   });
 
-  page1.push(emptyLine());
+  // ── PAGE 2 ───────────────────────────────────────────────────────────────
+  const page2 = [...header];
 
-  // ── PAGE 2 — details table ────────────────────────────────────────────────
-  const page2 = [];
-
-  // Page header (same as page 1)
-  page2.push(new Paragraph({
-    children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, font: 'David', size: 26, rightToLeft: true })],
-    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
-  }));
-  page2.push(new Paragraph({
-    children: [new TextRun({ text: 'ינשו"פ — יחידה נגד שריפות והשלכות פסולת', bold: true, font: 'David', size: 22, rightToLeft: true })],
-    alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
-    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '1a6b3a' } },
-  }));
-  if (inspLine.trim()) page2.push(p([t(inspLine, { size: 20 })], AlignmentType.RIGHT));
-  page2.push(emptyLine());
-
-  // "כללי" section header
   page2.push(borderParagraph('כללי'));
+  const genRows = [];
+  genRows.push(tableRow('קטגוריה', 'אכיפה — דוח פעולה'));
+  if (inspName) genRows.push(tableRow('מדווח', inspName + ' (פקח ינשו"פ)'));
+  if (dateFormatted) genRows.push(tableRow('תאריך', dateFormatted));
+  if (time) genRows.push(tableRow('זמן', time));
+  if (location) genRows.push(tableRow('מיקום', location));
+  page2.push(new Table({ rows: genRows, width: { size: 100, type: WidthType.PERCENTAGE }, bidirectional: true }));
 
-  // General info table
-  const generalRows = [];
-  generalRows.push(tableRow('קטגוריה', 'אכיפה — דוח פעולה'));
-  if (inspName) generalRows.push(tableRow('מדווח', `${inspName} (פקח ינשו"פ)`));
-  if (dateFormatted) generalRows.push(tableRow('תאריך', dateFormatted));
-  if (time) generalRows.push(tableRow('זמן', time));
-  if (location) generalRows.push(tableRow('מיקום', location));
-
-  page2.push(new Table({
-    rows: generalRows,
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    bidirectional: true,
-  }));
-
-  page2.push(emptyLine());
-
-  // "טבלת שדות" section header
+  page2.push(emptyLine(100));
   page2.push(borderParagraph('טבלת שדות'));
 
-  // Fields table
   const fieldRows = [];
-  if (eventType) fieldRows.push(tableRow('סוג פסולת / אירוע', eventType));
+  if (eventType) fieldRows.push(tableRow('סוג אירוע', eventType));
   if (plate) fieldRows.push(tableRow('לוחית זיהוי', plate));
   if (vehicle) fieldRows.push(tableRow('סוג רכב', vehicle));
   if (owner) fieldRows.push(tableRow('בעלות', owner));
   if (documentation) fieldRows.push(tableRow('תיעוד שנאסף', documentation));
   if (notes) fieldRows.push(tableRow('הערות', notes));
-
   if (fieldRows.length > 0) {
-    page2.push(new Table({
-      rows: fieldRows,
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      bidirectional: true,
-    }));
+    page2.push(new Table({ rows: fieldRows, width: { size: 100, type: WidthType.PERCENTAGE }, bidirectional: true }));
   }
 
-  // ── IMAGES — 2 per page ─────────────────────────────────────────────────
+  // ── IMAGES — 2 per page, proportional ────────────────────────────────────
   const imagePages = [];
+  const MAX_W = 460, MAX_H = 290;
 
   for (let i = 0; i < uploadedImages.length; i += 2) {
-    const imgPage = [];
+    const imgPage = [...header];
 
-    // Page header
-    imgPage.push(new Paragraph({
-      children: [new TextRun({ text: 'הרשות לשמירת הטבע והגנים הלאומיים', bold: true, font: 'David', size: 26, rightToLeft: true })],
-      alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 20 },
-    }));
-    imgPage.push(new Paragraph({
-      children: [new TextRun({ text: 'ינשו"פ — יחידה נגד שריפות והשלכות פסולת', bold: true, font: 'David', size: 22, rightToLeft: true })],
-      alignment: AlignmentType.CENTER, bidirectional: true, spacing: { after: 80 },
-      border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '1a6b3a' } },
-    }));
-    imgPage.push(emptyLine());
-
-    // 2 images per page
     for (let j = i; j < Math.min(i + 2, uploadedImages.length); j++) {
       const img = uploadedImages[j];
       const num = String(j + 1).padStart(2, '0');
@@ -813,31 +796,44 @@ async function buildWordDoc() {
         const bytes = new Uint8Array(binary.length);
         for (let k = 0; k < binary.length; k++) bytes[k] = binary.charCodeAt(k);
 
+        // Calculate proportional dimensions
+        let w = MAX_W, h = MAX_H;
+        const tempImg = new Image();
+        await new Promise(res => {
+          tempImg.onload = res;
+          tempImg.onerror = res;
+          tempImg.src = img.src;
+        });
+        if (tempImg.naturalWidth && tempImg.naturalHeight) {
+          const ratio = tempImg.naturalWidth / tempImg.naturalHeight;
+          if (ratio > MAX_W / MAX_H) {
+            w = MAX_W; h = Math.round(MAX_W / ratio);
+          } else {
+            h = MAX_H; w = Math.round(MAX_H * ratio);
+          }
+        }
+
         imgPage.push(new Paragraph({
-          children: [new ImageRun({ data: bytes, transformation: { width: 460, height: 290 }, type: 'jpg' })],
-          alignment: AlignmentType.CENTER, spacing: { after: 60 },
+          children: [new ImageRun({ data: bytes, transformation: { width: w, height: h }, type: 'jpg' })],
+          alignment: AlignmentType.CENTER, spacing: { after: 50 },
         }));
       } catch(e) { console.error('Image error', e); }
 
-      const caption = `תמונה מספר ${num} : ${img.desc || ''}`;
+      const caption = 'תמונה מספר ' + num + ' : ' + (img.desc || '');
       imgPage.push(new Paragraph({
         children: [new TextRun({ text: caption, bold: true, font: 'David', size: 22, rightToLeft: true })],
         alignment: AlignmentType.RIGHT, bidirectional: true,
-        spacing: { after: (j % 2 === 0 && j + 1 < uploadedImages.length) ? 180 : 60 },
+        spacing: { after: (j % 2 === 0 && j + 1 < uploadedImages.length) ? 160 : 60 },
       }));
     }
-
     imagePages.push(imgPage);
   }
 
-  // ── Assemble document with page breaks ───────────────────────────────────
+  // ── Assemble ─────────────────────────────────────────────────────────────
   const sections = [
-    { properties: {}, children: page1 },
-    { properties: { type: SectionType.NEXT_PAGE }, children: page2 },
-    ...imagePages.map(imgPage => ({
-      properties: { type: SectionType.NEXT_PAGE },
-      children: imgPage,
-    })),
+    { properties: { bidi: true }, children: page1 },
+    { properties: { type: SectionType.NEXT_PAGE, bidi: true }, children: page2 },
+    ...imagePages.map(pg => ({ properties: { type: SectionType.NEXT_PAGE, bidi: true }, children: pg })),
   ];
 
   const doc = new Document({ sections });
