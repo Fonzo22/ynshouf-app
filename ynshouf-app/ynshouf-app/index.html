@@ -13,6 +13,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.min.js"></script>
 <style>
 :root {
   --green-dark: #0f2318;
@@ -570,6 +571,41 @@ function getGPS() {
       } catch (e) {
         input.value = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
       }
+      
+      // Fetch Govmap by ITM coordinates
+      try {
+        const resDiv = document.getElementById('govmapResult');
+        resDiv.style.display = 'block';
+        resDiv.textContent = '⏳ שולף נתוני גוש/חלקה...';
+        
+        proj4.defs("EPSG:2039","+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=23.772,17.49,17.859,-0.3132,-1.85274,1.67299,-5.4262 +units=m +no_defs +type=crs");
+        const itm = proj4('EPSG:4326', 'EPSG:2039', [longitude, latitude]);
+        const x = Math.round(itm[0]);
+        const y = Math.round(itm[1]);
+        
+        const govmapRes = await fetch(`${PROXY}/govmap?x=${x}&y=${y}`);
+        const govmapData = await govmapRes.json();
+        
+        let found = null;
+        if (govmapData.data) {
+          for (const key in govmapData.data) {
+            if (govmapData.data[key] && govmapData.data[key].length > 0) {
+              found = govmapData.data[key][0];
+              break;
+            }
+          }
+        }
+        
+        if (found && found.Lot && found.Parcel) {
+          resDiv.innerHTML = `<strong>גוש:</strong> ${found.Lot} | <strong>חלקה:</strong> ${found.Parcel} | <strong>רשות:</strong> ${found.MunicipalityName || 'לא ידוע'}`;
+        } else {
+          resDiv.textContent = '❌ לא נמצאו נתוני גוש/חלקה למיקום זה';
+        }
+      } catch (e) {
+        console.error('Govmap coords error:', e);
+        document.getElementById('govmapResult').textContent = '❌ שגיאה בשליפת גוש/חלקה מהקואורדינטות';
+      }
+
       btn.textContent = '✅';
       setTimeout(() => { btn.textContent = '📍'; btn.disabled = false; }, 2000);
       showToast('מיקום עודכן ✓');

@@ -53,9 +53,10 @@ self.addEventListener('fetch', event => {
         .then(response => {
           if (!response || !response.ok) return response;
 
-          // Cache CDN resources (docx.js + Google Fonts) on first load
+          // Cache CDN resources (docx.js, proj4.js + Google Fonts) on first load
           const isCDN =
             url.startsWith('https://unpkg.com') ||
+            url.startsWith('https://cdnjs.cloudflare.com') ||
             url.startsWith('https://fonts.googleapis.com') ||
             url.startsWith('https://fonts.gstatic.com');
 
