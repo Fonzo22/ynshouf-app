@@ -198,6 +198,10 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .history-count-label { font-size: 11px; color: var(--text-light); }
 .history-clear-search { background: none; border: none; color: var(--text-light); font-size: 11px; font-family: 'Heebo', sans-serif; cursor: pointer; padding: 2px 6px; text-decoration: underline; }
 .history-clear-search:hover { color: var(--danger); }
+
+/* Export CSV button */
+.export-csv-btn { width: 100%; padding: 10px; background: var(--green-pale); color: var(--green-dark); border: 1.5px solid var(--green-accent); border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
+.export-csv-btn:active { background: rgba(91,163,115,0.3); }
 </style>
 </head>
 <body>
@@ -422,6 +426,7 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
           <span class="history-count-label" id="historyCountLabel"></span>
           <button class="history-clear-search" id="historyClearBtn" onclick="clearHistorySearch()" style="display:none">נקה סינון</button>
         </div>
+        <button class="export-csv-btn" onclick="exportHistoryCSV()">📥 ייצוא לאקסל (CSV)</button>
       </div>
 
       <div id="historyList"></div>
@@ -1235,7 +1240,29 @@ ${getResultText()}
 }
 
 function saveReport() {
-  const report = { id: Date.now(), date: document.getElementById('date').value, type: document.getElementById('event_type').value, location: document.getElementById('location').value, text: getResultText(), savedAt: new Date().toISOString() };
+  const params = {
+    date: document.getElementById('date').value,
+    time: document.getElementById('time').value,
+    plate: document.getElementById('plate').value,
+    vehicle: document.getElementById('vehicle').value,
+    owner: document.getElementById('owner').value,
+    documentation: document.getElementById('documentation').value,
+    notes: document.getElementById('notes').value,
+    inspectorName: document.getElementById('inspector_name').value,
+    inspectorId: document.getElementById('inspector_id').value,
+    description: document.getElementById('description').value
+  };
+
+  const report = { 
+    id: Date.now(), 
+    date: params.date, 
+    type: document.getElementById('event_type').value, 
+    location: document.getElementById('location').value, 
+    text: getResultText(), 
+    savedAt: new Date().toISOString(),
+    params: params
+  };
+
   const history = JSON.parse(localStorage.getItem('reports') || '[]');
   history.unshift(report);
   localStorage.setItem('reports', JSON.stringify(history));
@@ -1339,6 +1366,59 @@ function deleteReport(e, id) {
   const history = JSON.parse(localStorage.getItem('reports') || '[]').filter(r => r.id !== id);
   localStorage.setItem('reports', JSON.stringify(history));
   renderHistory();
+}
+
+function exportHistoryCSV() {
+  const history = JSON.parse(localStorage.getItem('reports') || '[]');
+  if (history.length === 0) {
+    alert('אין נתונים לייצוא');
+    return;
+  }
+
+  // Headers
+  const headers = ['תאריך דיווח', 'תאריך אירוע', 'שעה', 'סוג אירוע', 'מיקום', 'לוחית רישוי', 'סוג רכב', 'בעלים / מבצע', 'פקח', 'מספר עובד', 'תיאור מה קרה', 'דוח AI'];
+
+  // Escape function for CSV
+  const escapeCSV = (str) => {
+    if (!str) return '';
+    const cleanStr = String(str).replace(/"/g, '""');
+    return `"${cleanStr}"`;
+  };
+
+  const rows = history.map(item => {
+    const p = item.params || {};
+    const dateFormatted = new Date(item.savedAt).toLocaleDateString('he-IL');
+    const eventDate = p.date ? new Date(p.date).toLocaleDateString('he-IL') : (item.date ? new Date(item.date).toLocaleDateString('he-IL') : '');
+    return [
+      escapeCSV(dateFormatted),
+      escapeCSV(eventDate),
+      escapeCSV(p.time || ''),
+      escapeCSV(item.type || ''),
+      escapeCSV(item.location || ''),
+      escapeCSV(p.plate || ''),
+      escapeCSV(p.vehicle || ''),
+      escapeCSV(p.owner || ''),
+      escapeCSV(p.inspectorName || ''),
+      escapeCSV(p.inspectorId || ''),
+      escapeCSV(p.description || ''),
+      escapeCSV(item.text || '')
+    ].join(',');
+  });
+
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  
+  // Add UTF-8 BOM so Excel opens it correctly with Hebrew
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `ynshouf_history_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
