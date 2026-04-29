@@ -180,13 +180,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .gps-btn:active { background: var(--green-dark); transform: scale(0.94); }
 .gps-btn:disabled { opacity: 0.5; cursor: default; }
 
-/* Transfer to authorities */
-.transfer-checkboxes { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; background: var(--white); border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); }
-.check-label { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--text-dark); cursor: pointer; padding: 5px 10px; border-radius: 20px; border: 1.5px solid var(--sand-dark); background: var(--sand); transition: all 0.15s; user-select: none; }
-.check-label:has(input:checked) { background: var(--green-pale); border-color: var(--green-accent); color: var(--green-dark); font-weight: 600; }
-.check-label input[type="checkbox"] { display: none; }
-.check-icon { font-size: 13px; }
-
 /* History search bar */
 .history-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .history-search-row { display: flex; gap: 8px; }
@@ -329,27 +322,6 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
       <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImages(this)">
       <div id="imgGrid" style="margin-top:12px"></div>
       <div class="img-count" id="imgCount"></div>
-
-      <div class="section-title">
-        <div class="sec-line"></div>
-        <span class="sec-icon">🚨</span>
-        <span class="sec-label">העברה לרשויות</span>
-        <div class="sec-line"></div>
-      </div>
-      <div class="field">
-        <label>גורמים שהועבר אליהם <span class="opt-tag">אופציונלי</span></label>
-        <div class="transfer-checkboxes">
-          <label class="check-label"><input type="checkbox" id="xfer_green" value="משטרה ירוקה"><span class="check-icon">🟢</span> משטרה ירוקה</label>
-          <label class="check-label"><input type="checkbox" id="xfer_municipal" value="פקח עירוני"><span class="check-icon">🏛️</span> פקח עירוני</label>
-          <label class="check-label"><input type="checkbox" id="xfer_fire" value="כיבוי אש"><span class="check-icon">🔥</span> כיבוי אש</label>
-          <label class="check-label"><input type="checkbox" id="xfer_police" value="משטרת ישראל"><span class="check-icon">👮</span> משטרה</label>
-          <label class="check-label"><input type="checkbox" id="xfer_other" value="גורם אחר"><span class="check-icon">➕</span> אחר</label>
-        </div>
-      </div>
-      <div class="field" id="xfer_contact_field" style="display:none">
-        <label>איש קשר / פרטי ההעברה</label>
-        <input type="text" id="xfer_contact" placeholder="שם שוטר, מספר תיק, שם פקח...">
-      </div>
 
       <button class="gen-btn" id="genBtn" onclick="generateReport()">
         <span>✍️</span> כתיבת מהות האירוע
@@ -510,15 +482,6 @@ function resetForm() {
   document.getElementById('description').value = '';
   document.getElementById('notes').value = '';
 
-  // Reset transfer checkboxes
-  ['xfer_green','xfer_municipal','xfer_fire','xfer_police','xfer_other'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.checked = false;
-  });
-  const xferContact = document.getElementById('xfer_contact');
-  if (xferContact) xferContact.value = '';
-  document.getElementById('xfer_contact_field').style.display = 'none';
-
   // Clear images
   uploadedImages = [];
   renderImages();
@@ -591,23 +554,6 @@ function getGPS() {
   );
 }
 
-// Show/hide contact field when transfer checkboxes change
-document.addEventListener('change', function(e) {
-  if (e.target.matches('#xfer_green, #xfer_municipal, #xfer_fire, #xfer_police, #xfer_other')) {
-    const anyChecked = ['xfer_green','xfer_municipal','xfer_fire','xfer_police','xfer_other']
-      .some(id => document.getElementById(id).checked);
-    document.getElementById('xfer_contact_field').style.display = anyChecked ? '' : 'none';
-  }
-});
-
-// Helper: get selected transfer authorities as string
-function getTransferList() {
-  const checked = ['xfer_green','xfer_municipal','xfer_fire','xfer_police','xfer_other']
-    .filter(id => document.getElementById(id).checked)
-    .map(id => document.getElementById(id).value);
-  return checked.join(', ');
-}
-
 // Image handling
 function handleImages(input) {
   const files = Array.from(input.files);
@@ -663,8 +609,6 @@ async function generateReport() {
   const inspectorName = document.getElementById('inspector_name').value;
   const inspectorId = document.getElementById('inspector_id').value;
   const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
-  const transferList = getTransferList();
-  const transferContact = document.getElementById('xfer_contact').value;
 
   // Build details string — only include fields that have values
   const details = [];
@@ -678,7 +622,6 @@ async function generateReport() {
   if (documentation) details.push(`תיעוד: ${documentation}`);
   if (inspectorName) details.push(`פקח: ${inspectorName}${inspectorId ? ' מס\' ' + inspectorId : ''}`);
   if (notes) details.push(`הערות: ${notes}`);
-  if (transferList) details.push(`הועבר ל: ${transferList}${transferContact ? ' — ' + transferContact : ''}`);
 
   const prompt = `אתה פקח סביבתי ינשו"פ של רשות הטבע והגנים. כתוב סעיף "מהות האירוע" לדוח אכיפה רשמי בעברית.
 סגנון: רשמי, עובדתי, ענייני. גוף ראשון יחיד. פסקאות קצרות. בלי כותרות פנימיות. התחל ב"במסגרת פעילות אכיפה שוטפת...".
@@ -976,10 +919,6 @@ async function buildWordDoc() {
   if (owner) fieldRows.push(tableRow('בעלות', owner));
   if (documentation) fieldRows.push(tableRow('תיעוד שנאסף', documentation));
   if (notes) fieldRows.push(tableRow('הערות', notes));
-  // Transfer to authorities
-  const xferList = getTransferList();
-  const xferContact = document.getElementById('xfer_contact').value;
-  if (xferList) fieldRows.push(tableRow('הועבר לרשויות', xferList + (xferContact ? ' — ' + xferContact : '')));
   if (fieldRows.length > 0) {
     page2.push(new Table({ rows: fieldRows, width: { size: 100, type: WidthType.PERCENTAGE }, bidirectional: true }));
   }
