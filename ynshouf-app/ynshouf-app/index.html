@@ -759,29 +759,33 @@ function t(text, opts) {
 function emptyLine(sp) { return p([t('')], docx.AlignmentType.RIGHT, sp || 40); }
 
 function borderParagraph(text) {
-  const { Paragraph, TextRun, AlignmentType } = docx;
+  const { Paragraph, TextRun, AlignmentType, BorderStyle } = docx;
   return new Paragraph({
     children: [new TextRun({ text, bold: true, color: '1a6b3a', font: 'David', size: 24, rightToLeft: true })],
     alignment: AlignmentType.RIGHT,
     bidirectional: true,
-    spacing: { before: 160, after: 80 },
+    spacing: { before: 200, after: 100 },
+    border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: '4a8c62' } },
   });
 }
 
+// In RTL tables, children[0] = RIGHT column, children[1] = LEFT column
 function tableRow(label, value) {
   const { TableRow, TableCell, Paragraph, TextRun, AlignmentType, WidthType, BorderStyle } = docx;
   const cellBorder = { style: BorderStyle.SINGLE, size: 4, color: 'cccccc' };
   const borders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
   return new TableRow({
     children: [
-      new TableCell({
-        children: [new Paragraph({ children: [new TextRun({ text: value || '—', font: 'David', size: 20, rightToLeft: true })], alignment: AlignmentType.RIGHT, bidirectional: true })],
-        width: { size: 65, type: WidthType.PERCENTAGE }, borders,
-      }),
+      // RIGHT side in RTL = label (bold, shaded)
       new TableCell({
         children: [new Paragraph({ children: [new TextRun({ text: label, bold: true, font: 'David', size: 20, rightToLeft: true })], alignment: AlignmentType.RIGHT, bidirectional: true })],
         width: { size: 35, type: WidthType.PERCENTAGE }, borders,
-        shading: { fill: 'f2f2f2' },
+        shading: { fill: 'f0f5f2' },
+      }),
+      // LEFT side in RTL = value
+      new TableCell({
+        children: [new Paragraph({ children: [new TextRun({ text: value || '—', font: 'David', size: 20, rightToLeft: true })], alignment: AlignmentType.RIGHT, bidirectional: true })],
+        width: { size: 65, type: WidthType.PERCENTAGE }, borders,
       }),
     ],
   });
@@ -815,7 +819,6 @@ async function buildPageHeader() {
             borders: noBorders,
             verticalAlign: 'center',
           }),
-          // Left cell: title lines
           new TableCell({
             children: [
               new Paragraph({
@@ -868,13 +871,17 @@ async function buildWordDoc() {
   const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : '';
 
   const header = await buildPageHeader();
+  // A4 page margins ~20mm in twips
+  const pageMargin = { top: 1134, right: 1134, bottom: 1134, left: 1134 };
 
   // ── PAGE 1 ───────────────────────────────────────────────────────────────
   const page1 = [...header];
 
-  const inspLine = [inspName, inspId ? 'מספר עובד ' + inspId : '', 'פקח ינשו"פ, רט"ג'].filter(Boolean).join(' , ');
-  if (inspLine.trim()) page1.push(p([t(inspLine, { size: 20 })], AlignmentType.RIGHT, 20));
-  if (dateFormatted) page1.push(p([t(dateFormatted, { size: 20 })], AlignmentType.RIGHT, 80));
+  // Inspector: name · ID · role on one line, date | time on next
+  const inspLine = [inspName, inspId ? 'מספר עובד: ' + inspId : '', 'פקח ינשו"פ, רשות הטבע והגנים'].filter(Boolean).join(' · ');
+  if (inspLine.trim()) page1.push(p([t(inspLine, { size: 20 })], AlignmentType.RIGHT, 12));
+  const dateLine = [dateFormatted && 'תאריך: ' + dateFormatted, time && 'שעה: ' + time].filter(Boolean).join('   |   ');
+  if (dateLine) page1.push(p([t(dateLine, { size: 20 })], AlignmentType.RIGHT, 80));
 
   page1.push(emptyLine(60));
   page1.push(new Paragraph({
@@ -957,8 +964,10 @@ async function buildWordDoc() {
           }
         }
 
+        // Detect image type from data URL
+        const mimeType = img.src.match(/^data:image\/(png|gif)/i) ? 'png' : 'jpg';
         imgPage.push(new Paragraph({
-          children: [new ImageRun({ data: bytes, transformation: { width: w, height: h }, type: 'jpg' })],
+          children: [new ImageRun({ data: bytes, transformation: { width: w, height: h }, type: mimeType })],
           alignment: AlignmentType.CENTER, spacing: { after: 50 },
         }));
       } catch(e) { console.error('Image error', e); }
@@ -974,13 +983,26 @@ async function buildWordDoc() {
   }
 
   // ── Assemble ─────────────────────────────────────────────────────────────
+  const mkSection = (children, type) => ({
+    properties: { ...(type ? { type } : {}), bidi: true, page: { margin: pageMargin } },
+    children,
+  });
   const sections = [
-    { properties: { bidi: true }, children: page1 },
-    { properties: { type: SectionType.NEXT_PAGE, bidi: true }, children: page2 },
-    ...imagePages.map(pg => ({ properties: { type: SectionType.NEXT_PAGE, bidi: true }, children: pg })),
+    mkSection(page1),
+    mkSection(page2, SectionType.NEXT_PAGE),
+    ...imagePages.map(pg => mkSection(pg, SectionType.NEXT_PAGE)),
   ];
 
-  const doc = new Document({ sections });
+  const doc = new Document({
+    sections,
+    styles: {
+      default: {
+        document: {
+          run: { font: 'David', size: 22, rightToLeft: true },
+        },
+      },
+    },
+  });
   return await Packer.toBlob(doc);
 }
 
