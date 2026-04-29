@@ -168,6 +168,22 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .modal-text { font-size: 13px; line-height: 1.9; color: var(--text-dark); white-space: pre-wrap; direction: rtl; }
 .modal-close { width: 100%; padding: 13px; margin-top: 20px; background: var(--green-dark); color: var(--white); border: none; border-radius: var(--radius); font-family: 'Heebo', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; }
 .modal-copy { width: 100%; padding: 13px; margin-top: 10px; background: var(--green-pale); color: var(--green-dark); border: 1.5px solid var(--green-accent); border-radius: var(--radius); font-family: 'Heebo', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; }
+
+/* Reset form button in tab bar */
+.reset-btn { background: rgba(184,50,50,0.15); color: #e87070; border: 1px solid rgba(184,50,50,0.3); padding: 0 13px; border-radius: 9px; font-family: 'Heebo', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; flex-shrink: 0; transition: background 0.15s; }
+.reset-btn:active { background: rgba(184,50,50,0.3); }
+
+/* History search bar */
+.history-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.history-search-row { display: flex; gap: 8px; }
+.history-search-input { flex: 1; padding: 10px 13px; background: var(--white); border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 14px; color: var(--text-dark); outline: none; direction: rtl; -webkit-appearance: none; }
+.history-search-input:focus { border-color: var(--green-accent); }
+.history-type-filter { padding: 10px 13px; background: var(--white); border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 13px; color: var(--text-dark); outline: none; direction: rtl; -webkit-appearance: none; min-width: 130px; }
+.history-type-filter:focus { border-color: var(--green-accent); }
+.history-count-bar { display: flex; align-items: center; justify-content: space-between; }
+.history-count-label { font-size: 11px; color: var(--text-light); }
+.history-clear-search { background: none; border: none; color: var(--text-light); font-size: 11px; font-family: 'Heebo', sans-serif; cursor: pointer; padding: 2px 6px; text-decoration: underline; }
+.history-clear-search:hover { color: var(--danger); }
 </style>
 </head>
 <body>
@@ -186,8 +202,9 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
   </div>
 
   <div class="tab-bar">
-    <button class="tab active" onclick="switchTab('form')">דוח חדש</button>
-    <button class="tab" onclick="switchTab('history')">היסטוריה</button>
+    <button class="tab active" id="tabForm" onclick="switchTab('form')">דוח חדש</button>
+    <button class="tab" id="tabHistory" onclick="switchTab('history')">היסטוריה</button>
+    <button class="reset-btn" id="resetBtn" onclick="resetForm()" title="נקה טופס">🗑️ נקה</button>
   </div>
 
   <div class="content">
@@ -354,6 +371,28 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         <span class="sec-label">אירועים שמורים</span>
         <div class="sec-line"></div>
       </div>
+
+      <div class="history-filters">
+        <div class="history-search-row">
+          <input type="search" class="history-search-input" id="historySearch"
+            placeholder="🔍  חיפוש לפי מיקום או תיאור..."
+            oninput="renderHistory()">
+          <select class="history-type-filter" id="historyTypeFilter" onchange="renderHistory()">
+            <option value="">כל הסוגים</option>
+            <option>השלכת פסולת בניין</option>
+            <option>השלכת פסולת מעורבת</option>
+            <option>שריפת פסולת</option>
+            <option>שריפת קוצים</option>
+            <option>שריפת פסולת חקלאית</option>
+            <option>אחר</option>
+          </select>
+        </div>
+        <div class="history-count-bar">
+          <span class="history-count-label" id="historyCountLabel"></span>
+          <button class="history-clear-search" id="historyClearBtn" onclick="clearHistorySearch()" style="display:none">נקה סינון</button>
+        </div>
+      </div>
+
       <div id="historyList"></div>
     </div>
   </div>
@@ -404,10 +443,61 @@ function showToast(msg) {
 }
 
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='form')||(i===1&&tab==='history')));
+  document.getElementById('tabForm').classList.toggle('active', tab === 'form');
+  document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
+  // Show reset button only on form tab
+  document.getElementById('resetBtn').style.display = tab === 'form' ? '' : 'none';
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + tab).classList.add('active');
   if (tab === 'history') renderHistory();
+}
+
+// Reset / clear the form
+function resetForm() {
+  const hasContent = document.getElementById('event_type').value ||
+                     document.getElementById('location').value ||
+                     document.getElementById('description').value ||
+                     uploadedImages.length > 0;
+  if (hasContent && !confirm('לנקות את הטופס ולהתחיל דוח חדש?')) return;
+
+  // Reset all form fields
+  document.getElementById('date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('time').value = '';
+  document.getElementById('event_type').value = '';
+  document.getElementById('location').value = '';
+  document.getElementById('plate').value = '';
+  document.getElementById('vehicle').value = '';
+  document.getElementById('owner').value = '';
+  document.getElementById('documentation').selectedIndex = 0;
+  document.getElementById('description').value = '';
+  document.getElementById('notes').value = '';
+
+  // Clear images
+  uploadedImages = [];
+  renderImages();
+
+  // Hide result sections
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('exportSection').style.display = 'none';
+  document.getElementById('saveSection').style.display = 'none';
+  document.getElementById('showFixBtn').style.display = 'none';
+  document.getElementById('aiFix').style.display = 'none';
+  document.getElementById('loadingBar').style.display = 'none';
+
+  // Reset edit mode flags
+  if (isEditMode) {
+    isEditMode = false;
+    document.getElementById('resultText').style.display = 'block';
+    document.getElementById('resultTextarea').style.display = 'none';
+  }
+  isAIFixVisible = false;
+
+  // Enable generate button
+  document.getElementById('genBtn').disabled = false;
+
+  // Scroll form back to top
+  document.querySelector('.content').scrollTop = 0;
+  showToast('הטופס נוקה ✓');
 }
 
 // Image handling
@@ -927,22 +1017,77 @@ function saveReport() {
 }
 
 function renderHistory() {
-  const history = JSON.parse(localStorage.getItem('reports') || '[]');
+  const allReports = JSON.parse(localStorage.getItem('reports') || '[]');
   const list = document.getElementById('historyList');
-  if (!history.length) { list.innerHTML = '<div class="history-empty">אין אירועים שמורים עדיין</div>'; return; }
-  list.innerHTML = history.map(r => `
+  const searchEl = document.getElementById('historySearch');
+  const typeEl = document.getElementById('historyTypeFilter');
+  const countLabel = document.getElementById('historyCountLabel');
+  const clearBtn = document.getElementById('historyClearBtn');
+
+  const query = (searchEl ? searchEl.value.trim().toLowerCase() : '');
+  const typeFilter = (typeEl ? typeEl.value : '');
+  const isFiltering = query || typeFilter;
+
+  if (clearBtn) clearBtn.style.display = isFiltering ? 'inline' : 'none';
+
+  if (!allReports.length) {
+    list.innerHTML = '<div class="history-empty">אין אירועים שמורים עדיין</div>';
+    if (countLabel) countLabel.textContent = '';
+    return;
+  }
+
+  // Apply filters
+  const filtered = allReports.filter(r => {
+    const matchesType = !typeFilter || r.type === typeFilter;
+    const matchesQuery = !query ||
+      (r.location && r.location.toLowerCase().includes(query)) ||
+      (r.text && r.text.toLowerCase().includes(query)) ||
+      (r.type && r.type.toLowerCase().includes(query));
+    return matchesType && matchesQuery;
+  });
+
+  // Update count label
+  if (countLabel) {
+    if (isFiltering) {
+      countLabel.textContent = `${filtered.length} מתוך ${allReports.length} אירועים`;
+    } else {
+      countLabel.textContent = `${allReports.length} אירועים שמורים`;
+    }
+  }
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="history-empty">לא נמצאו אירועים תואמים</div>';
+    return;
+  }
+
+  // Highlight matching search term
+  function highlight(text, q) {
+    if (!q || !text) return text || '';
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark style="background:#d4edda;border-radius:2px">$1</mark>');
+  }
+
+  list.innerHTML = filtered.map(r => `
     <div class="history-item" onclick="openModal(${r.id})">
       <div class="history-item-header">
-        <span class="history-type">${r.type}</span>
+        <span class="history-type">${highlight(r.type, query)}</span>
         <div style="display:flex;align-items:center;gap:4px">
           <span class="history-date">${new Date(r.date).toLocaleDateString('he-IL')}</span>
           <button class="history-delete" onclick="deleteReport(event,${r.id})">×</button>
         </div>
       </div>
-      <div class="history-location">📍 ${r.location}</div>
-      <div class="history-preview">${r.text}</div>
+      <div class="history-location">📍 ${highlight(r.location, query)}</div>
+      <div class="history-preview">${highlight(r.text, query)}</div>
     </div>
   `).join('');
+}
+
+function clearHistorySearch() {
+  const searchEl = document.getElementById('historySearch');
+  const typeEl = document.getElementById('historyTypeFilter');
+  if (searchEl) searchEl.value = '';
+  if (typeEl) typeEl.value = '';
+  renderHistory();
 }
 
 function openModal(id) {
