@@ -180,6 +180,13 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .gps-btn:active { background: var(--green-dark); transform: scale(0.94); }
 .gps-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* Signature Pad */
+.signature-wrapper { border: 1.5px solid var(--sand-dark); border-radius: var(--radius-sm); background: var(--white); overflow: hidden; position: relative; margin-bottom: 12px; }
+.signature-pad { width: 100%; height: 160px; cursor: crosshair; touch-action: none; display: block; }
+.signature-clear { position: absolute; top: 8px; left: 8px; background: rgba(184,50,50,0.1); color: #b83232; border: 1px solid rgba(184,50,50,0.2); border-radius: 6px; padding: 4px 10px; font-family: 'Heebo', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; z-index: 2; transition: background 0.15s; }
+.signature-clear:active { background: rgba(184,50,50,0.25); }
+.signature-placeholder { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--text-light); pointer-events: none; font-size: 14px; font-weight: 500; opacity: 0.6; z-index: 1; }
+
 /* History search bar */
 .history-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .history-search-row { display: flex; gap: 8px; }
@@ -322,6 +329,18 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
       <input type="file" id="imgInput" accept="image/*" multiple style="display:none" onchange="handleImages(this)">
       <div id="imgGrid" style="margin-top:12px"></div>
       <div class="img-count" id="imgCount"></div>
+
+      <div class="section-title">
+        <div class="sec-line"></div>
+        <span class="sec-icon">✍️</span>
+        <span class="sec-label">חתימת פקח</span>
+        <div class="sec-line"></div>
+      </div>
+      <div class="signature-wrapper">
+        <div class="signature-placeholder" id="sigPlaceholder">חתום כאן...</div>
+        <canvas class="signature-pad" id="sigCanvas"></canvas>
+        <button class="signature-clear" type="button" onclick="clearSignature()">נקה</button>
+      </div>
 
       <button class="gen-btn" id="genBtn" onclick="generateReport()">
         <span>✍️</span> כתיבת מהות האירוע
@@ -485,6 +504,10 @@ function resetForm() {
   // Clear images
   uploadedImages = [];
   renderImages();
+  document.getElementById('imgInput').value = '';
+
+  // Clear signature
+  clearSignature();
 
   // Hide result sections
   document.getElementById('resultBox').style.display = 'none';
@@ -591,6 +614,66 @@ function removeImage(i) {
   uploadedImages.splice(i, 1);
   renderImages();
 }
+
+// ── Signature Pad ────────────────────────────────────────────────────────────
+const canvas = document.getElementById('sigCanvas');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+let sigEmpty = true;
+
+function resizeCanvas() {
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = canvas.offsetHeight * ratio;
+  ctx.scale(ratio, ratio);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = '#0f2318';
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const evt = e.touches ? e.touches[0] : e;
+  return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+}
+
+function startDraw(e) {
+  e.preventDefault();
+  drawing = true;
+  sigEmpty = false;
+  document.getElementById('sigPlaceholder').style.display = 'none';
+  const pos = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+}
+function draw(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  const pos = getPos(e);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+}
+function stopDraw() { drawing = false; }
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', draw);
+canvas.addEventListener('mouseup', stopDraw);
+canvas.addEventListener('mouseout', stopDraw);
+canvas.addEventListener('touchstart', startDraw, { passive: false });
+canvas.addEventListener('touchmove', draw, { passive: false });
+canvas.addEventListener('touchend', stopDraw);
+
+function clearSignature() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  sigEmpty = true;
+  document.getElementById('sigPlaceholder').style.display = 'block';
+}
+
+// Initialize canvas on load and resize
+window.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
+setTimeout(resizeCanvas, 300);
 
 // Generate report
 async function generateReport() {
@@ -928,6 +1011,24 @@ async function buildWordDoc() {
   if (notes) fieldRows.push(tableRow('הערות', notes));
   if (fieldRows.length > 0) {
     page2.push(new Table({ rows: fieldRows, width: { size: 100, type: WidthType.PERCENTAGE }, bidirectional: true }));
+  }
+
+  // Add signature if exists
+  if (!sigEmpty) {
+    try {
+      const sigData = canvas.toDataURL('image/png');
+      const sigBase64 = sigData.split(',')[1];
+      const sigBinary = atob(sigBase64);
+      const sigBytes = new Uint8Array(sigBinary.length);
+      for (let i = 0; i < sigBinary.length; i++) sigBytes[i] = sigBinary.charCodeAt(i);
+
+      page2.push(emptyLine(120));
+      page2.push(borderParagraph('חתימת פקח'));
+      page2.push(new Paragraph({
+        children: [new ImageRun({ data: sigBytes, transformation: { width: 180, height: Math.round(180 * (canvas.height / canvas.width)) }, type: 'png' })],
+        alignment: AlignmentType.RIGHT,
+      }));
+    } catch(e) { console.error('Signature error', e); }
   }
 
   // ── IMAGES — 2 per page, proportional ────────────────────────────────────
