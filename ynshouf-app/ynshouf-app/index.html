@@ -268,7 +268,9 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         <div class="location-row">
           <input type="text" id="location" placeholder="לדוגמה: בין אופקים לבסיס חצרים">
           <button class="gps-btn" id="gpsBtn" onclick="getGPS()" title="מיקום GPS אוטומטי">📍</button>
+          <button class="gps-btn" id="govmapBtn" style="background:#2a5a8a" onclick="fetchGovmap()" title="הבא גוש וחלקה">🗺️</button>
         </div>
+        <div id="govmapResult" style="margin-top:8px; font-size:13px; color:var(--text-mid); display:none; background:var(--sand-light); padding:8px; border-radius:var(--radius-sm);"></div>
       </div>
 
       <div class="section-title">
@@ -575,6 +577,53 @@ function getGPS() {
     },
     { timeout: 12000, enableHighAccuracy: true }
   );
+}
+
+// ── Govmap Block/Parcel ────────────────────────────────────────────────────
+async function fetchGovmap() {
+  const loc = document.getElementById('location').value.trim();
+  const resDiv = document.getElementById('govmapResult');
+  const btn = document.getElementById('govmapBtn');
+  
+  if (!loc) {
+    alert('יש להזין מיקום תחילה');
+    return;
+  }
+  
+  resDiv.style.display = 'block';
+  resDiv.textContent = '⏳ מחפש נתוני גוש/חלקה...';
+  btn.disabled = true;
+  
+  try {
+    const response = await fetch(PROXY + '/govmap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ SearchString: loc, ResultLImit: 1 })
+    });
+    
+    const data = await response.json();
+    let found = null;
+    
+    if (data.data) {
+      for (const key in data.data) {
+        if (data.data[key] && data.data[key].length > 0) {
+          found = data.data[key][0];
+          break;
+        }
+      }
+    }
+    
+    if (found && found.Lot && found.Parcel) {
+      resDiv.innerHTML = `<strong>גוש:</strong> ${found.Lot} | <strong>חלקה:</strong> ${found.Parcel} | <strong>רשות:</strong> ${found.MunicipalityName || 'לא ידוע'}`;
+    } else {
+      resDiv.textContent = '❌ לא נמצאו נתוני גוש/חלקה למיקום זה';
+    }
+  } catch(e) {
+    console.error(e);
+    resDiv.textContent = '❌ שגיאה בתקשורת עם שרת Govmap';
+  }
+  
+  btn.disabled = false;
 }
 
 // Image handling
