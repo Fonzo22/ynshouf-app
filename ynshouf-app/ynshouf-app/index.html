@@ -204,6 +204,9 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
 .export-csv-btn { width: 100%; padding: 10px; background: var(--green-pale); color: var(--green-dark); border: 1.5px solid var(--green-accent); border-radius: var(--radius-sm); font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 4px; transition: background 0.15s; }
 .export-csv-btn:active { background: rgba(91,163,115,0.3); }
 #govmapResult { display: none; }
+.govmap-link-btn { display: inline-block; margin-top: 8px; padding: 8px 16px; background: #28a745; color: white; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; transition: background 0.2s; border: none; cursor: pointer; }
+.govmap-link-btn:active { background: #1e7e34; }
+.itm-coords { font-family: monospace; font-weight: bold; color: var(--green-dark); }
 </style>
 </head>
 <body>
@@ -274,9 +277,8 @@ html, body { height: 100%; overflow: hidden; font-family: 'Heebo', sans-serif; b
         <div class="location-row">
           <input type="text" id="location" placeholder="לדוגמה: בין אופקים לבסיס חצרים">
           <button class="gps-btn" id="gpsBtn" onclick="getGPS()" title="מיקום GPS אוטומטי">📍</button>
-          <button class="gps-btn" id="govmapBtn" style="background:#2a5a8a" onclick="fetchGovmap()" title="הבא גוש וחלקה">🗺️</button>
         </div>
-        <div id="govmapResult" style="margin-top:8px; font-size:13px; color:var(--text-mid); display:none; background:var(--sand-light); padding:8px; border-radius:var(--radius-sm);"></div>
+        <div id="govmapResult" style="margin-top:8px; font-size:13px; color:var(--text-mid); display:none; background:rgba(0,0,0,0.05); padding:10px; border-radius:var(--radius-sm); border:1px solid var(--sand-dark);"></div>
       </div>
 
       <div class="section-title">
@@ -455,6 +457,7 @@ const PROXY = 'https://ynshouf-proxy.fonzoahrak.workers.dev';
 let uploadedImages = [];
 let isEditMode = false;
 let isAIFixVisible = false;
+let currentITM = null;
 
 document.getElementById('date').value = new Date().toISOString().split('T')[0];
 
@@ -573,38 +576,25 @@ function getGPS() {
         input.value = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
       }
       
-      // Fetch Govmap by ITM coordinates
+      // Calculate ITM coordinates
       try {
         const resDiv = document.getElementById('govmapResult');
-      
-      
+        resDiv.style.display = 'block';
         
         proj4.defs("EPSG:2039","+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=23.772,17.49,17.859,-0.3132,-1.85274,1.67299,-5.4262 +units=m +no_defs +type=crs");
         const itm = proj4('EPSG:4326', 'EPSG:2039', [longitude, latitude]);
         const x = Math.round(itm[0]);
         const y = Math.round(itm[1]);
-        
-        const govmapRes = await fetch(`${PROXY}/govmap?x=${x}&y=${y}`);
-        const govmapData = await govmapRes.json();
-        
-        let found = null;
-        if (govmapData.data) {
-          for (const key in govmapData.data) {
-            if (govmapData.data[key] && govmapData.data[key].length > 0) {
-              found = govmapData.data[key][0];
-              break;
-            }
-          }
-        }
-        
-        if (found && found.Lot && found.Parcel) {
-          resDiv.innerHTML = `<strong>גוש:</strong> ${found.Lot} | <strong>חלקה:</strong> ${found.Parcel} | <strong>רשות:</strong> ${found.MunicipalityName || 'לא ידוע'}`;
-        } else {
-          resDiv.textContent = '❌ לא נמצאו נתוני גוש/חלקה למיקום זה';
-        }
+        currentITM = { x, y };
+
+        resDiv.innerHTML = `
+          <div style="margin-bottom:8px">
+            <strong>קואורדינטות ITM:</strong> <span class="itm-coords">X: ${x}, Y: ${y}</span>
+          </div>
+          <a href="https://www.govmap.gov.il/?c=${x},${y}&z=8&lay=75" target="_blank" class="govmap-link-btn">פתח ב-Govmap</a>
+        `;
       } catch (e) {
-        console.error('Govmap coords error:', e);
-        document.getElementById('govmapResult').textContent = '❌ שגיאה בשליפת גוש/חלקה מהקואורדינטות';
+        console.error('ITM conversion error:', e);
       }
 
       btn.textContent = '✅';
@@ -622,51 +612,7 @@ function getGPS() {
 }
 
 // ── Govmap Block/Parcel ────────────────────────────────────────────────────
-async function fetchGovmap() {
-  const loc = document.getElementById('location').value.trim();
-  const resDiv = document.getElementById('govmapResult');
-  const btn = document.getElementById('govmapBtn');
-  
-  if (!loc) {
-    alert('יש להזין מיקום תחילה');
-    return;
-  }
-  
-  resDiv.style.display = 'block';
-  resDiv.textContent = '⏳ מחפש נתוני גוש/חלקה...';
-  btn.disabled = true;
-  
-  try {
-    const response = await fetch(PROXY + '/govmap', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ SearchString: loc, ResultLImit: 1 })
-    });
-    
-    const data = await response.json();
-    let found = null;
-    
-    if (data.data) {
-      for (const key in data.data) {
-        if (data.data[key] && data.data[key].length > 0) {
-          found = data.data[key][0];
-          break;
-        }
-      }
-    }
-    
-    if (found && found.Lot && found.Parcel) {
-      resDiv.innerHTML = `<strong>גוש:</strong> ${found.Lot} | <strong>חלקה:</strong> ${found.Parcel} | <strong>רשות:</strong> ${found.MunicipalityName || 'לא ידוע'}`;
-    } else {
-      resDiv.textContent = '❌ לא נמצאו נתוני גוש/חלקה למיקום זה';
-    }
-  } catch(e) {
-    console.error(e);
-    resDiv.textContent = '❌ שגיאה בתקשורת עם שרת Govmap';
-  }
-  
-  btn.disabled = false;
-}
+// fetchGovmap and proxy logic removed as requested
 
 // Image handling
 function handleImages(input) {
@@ -790,6 +736,7 @@ async function generateReport() {
   if (time) details.push(`שעה: ${time}`);
   details.push(`סוג: ${eventType}`);
   details.push(`מיקום: ${location}`);
+  if (currentITM) details.push(`קואורדינטות ITM: X=${currentITM.x}, Y=${currentITM.y}`);
   if (plate) details.push(`לוחית: ${plate}`);
   if (vehicle) details.push(`רכב: ${vehicle}`);
   if (owner) details.push(`בעלים/מבצע: ${owner}`);
