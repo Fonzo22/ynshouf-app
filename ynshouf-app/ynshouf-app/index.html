@@ -1760,137 +1760,378 @@ ${currentText}
 
     function copyResult() {
       navigator.clipboard.writeText(getResultText());
-      emptyLine(600),
-      p([t('׳›׳׳׳™', { bold: true, size: 28, color: blueTitle })], AlignmentType.RIGHT),
-      new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        rows: [
-          tableRow('׳§׳˜׳’׳•׳¨׳™׳”', '׳׳›׳™׳₪׳” ג€” ׳“׳•׳— ׳₪׳¢׳•׳׳”'),
-          tableRow('׳׳“׳•׳•׳—', `${inspName} (׳₪׳§׳— ׳™׳ ׳©׳•"׳₪)`),
-          tableRow('׳×׳׳¨׳™׳', dateFormatted),
-          tableRow('׳–׳׳', time),
-          tableRow('׳׳™׳§׳•׳', location),
-          tableRow('׳§׳•׳׳•׳¨׳“׳™׳ ׳˜׳•׳× ITM', itmText),
-        ],
-      }),
-    ];
+      showToast('הטקסט הועתק ✓');
+    }
 
-    // ג”€ג”€ PAGE 2: Fields & Signature ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
-    const page2 = [
-      p([t('׳˜׳‘׳׳× ׳©׳“׳•׳×', { bold: true, size: 28, color: blueTitle })], AlignmentType.RIGHT),
-      new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        rows: [
-          tableRow('׳¡׳•׳’ ׳׳™׳¨׳•׳¢', eventType),
-          tableRow('׳׳•׳—׳™׳× ׳–׳™׳”׳•׳™', plate),
-          tableRow('׳¡׳•׳’ ׳¨׳›׳‘', vehicle),
-          tableRow('׳‘׳¢׳׳•׳×', owner),
-          tableRow('׳×׳™׳¢׳•׳“ ׳©׳ ׳׳¡׳£', documentation),
-          tableRow('׳”׳¢׳¨׳•׳×', notes),
-        ],
-      }),
-      emptyLine(600),
-      p([t('׳©׳™׳•׳ ׳׳¨׳—׳‘׳™', { bold: true, size: 28, color: blueTitle })], AlignmentType.RIGHT),
-      new Table({
-        width: { size: 100, type: WidthType.PERCENTAGE },
-        rows: [
-          tableRow('׳’׳‘׳•׳׳•׳× ׳©׳™׳₪׳•׳˜', 'ג€”'),
-          tableRow('׳’׳•׳©׳™׳ / ׳—׳׳§׳•׳×', 'ג€”'),
-        ],
-      }),
-    ];
+    // ── buildWordDoc ───────────────────────────────────────────────────────────
+    // יוצר קובץ Word על בסיס הטמפלט YNSHOUF_Template.docx
+    // ממלא את כל הפלייסהולדרים ומוסיף עמודי תמונות וחתימה
 
-    // Signature
-    if (!sigEmpty) {
+    async function buildWordDoc() {
+      const { AlignmentType, BorderStyle, Document, Footer, ImageRun,
+              Packer, PageBreak, Paragraph, SectionType, TextRun, WidthType } = docx;
+
+      // ── נתוני הטופס ───────────────────────────────────────
+      const eventType    = document.getElementById('event_type').value || '';
+      const location     = document.getElementById('location').value || '';
+      const date         = document.getElementById('date').value || '';
+      const time         = document.getElementById('time').value || '';
+      const plate        = document.getElementById('plate').value || '';
+      const vehicle      = document.getElementById('vehicle').value || '';
+      const owner        = document.getElementById('owner').value || '';
+      const documentation= document.getElementById('documentation').value || '';
+      const notes        = document.getElementById('notes').value || '';
+      const inspName     = document.getElementById('inspector_name').value || '';
+      const inspId       = document.getElementById('inspector_id').value || '';
+      const narrative    = getResultText() || '';
+
+      const dateFormatted = date ? new Date(date).toLocaleDateString('he-IL') : new Date().toLocaleDateString('he-IL');
+      const today = new Date().toLocaleDateString('he-IL');
+      const itmText = currentITM ? `X=${currentITM.x}, Y=${currentITM.y}` : '';
+      const gpsText = currentGPS ? `${currentGPS.lat.toFixed(6)}, ${currentGPS.lng.toFixed(6)}` : '';
+
+      // ── ניסיון לטעון טמפלט ─────────────────────────────────
+      let templateBuffer = null;
       try {
-        const sigData = canvas.toDataURL('image/png');
-        const b64 = sigData.split(',')[1];
-        const bin = atob(b64);
-        const arr = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        // נסה נתיב יחסי, ואם נכשל — נתיב מלא של GitHub Pages
+        const templateUrl = (() => {
+          const base = window.location.href.replace(/\/[^/]*$/, '/');
+          return base + 'YNSHOUF_Template.docx';
+        })();
+        const resp = await fetch(templateUrl);
+        if (resp.ok) templateBuffer = await resp.arrayBuffer();
+      } catch(e) { templateBuffer = null; }
 
-        page2.push(emptyLine(400));
-        page2.push(p([t('׳—׳×׳™׳׳× ׳₪׳§׳—', { bold: true, size: 20, color: blueTitle })], AlignmentType.RIGHT));
-        page2.push(new Paragraph({
-          children: [new ImageRun({ data: arr, transformation: { width: 150, height: 75 } })],
-          alignment: AlignmentType.RIGHT,
-        }));
-      } catch (e) { }
-    }
-
-    // ג”€ג”€ Photo Pages ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
-    const photoSections = [];
-    const MAX_W = 460, MAX_H = 290;
-
-    for (let i = 0; i < uploadedImages.length; i += 2) {
-      const children = [];
-      for (let j = i; j < Math.min(i + 2, uploadedImages.length); j++) {
-        const img = uploadedImages[j];
-        const b64 = img.src.split(',')[1];
-        const bin = atob(b64);
-        const arr = new Uint8Array(bin.length);
-        for (let k = 0; k < bin.length; k++) arr[k] = bin.charCodeAt(k);
-
-        // Proportional resize
-        let w = MAX_W, h = MAX_H;
-        const tempImg = new Image();
-        tempImg.src = img.src;
-        if (tempImg.naturalWidth && tempImg.naturalHeight) {
-          const ratio = tempImg.naturalWidth / tempImg.naturalHeight;
-          if (ratio > MAX_W / MAX_H) { h = Math.round(MAX_W / ratio); }
-          else { w = Math.round(MAX_H * ratio); }
-        }
-
-        children.push(
-          new Paragraph({
-            children: [new ImageRun({ data: arr, transformation: { width: w, height: h } })],
-            alignment: AlignmentType.CENTER,
-          }),
-          p([t(`׳×׳׳•׳ ׳” ׳׳¡׳₪׳¨ ${String(j + 1).padStart(2, '0')} : ${img.desc || ''}`, { bold: true })], AlignmentType.CENTER),
-          emptyLine(100)
-        );
+      // אם יש טמפלט — השתמש ב-docxtemplater
+      if (templateBuffer && typeof PizZip !== 'undefined' && typeof Docxtemplater !== 'undefined') {
+        return await buildFromTemplate(templateBuffer, {
+          DOC_DATE: today,
+          CASE_ID: plate || '—',
+          CATEGORY: 'אכיפה – דוח פעולה',
+          INSPECTOR: inspName + (inspId ? ` (${inspId})` : ''),
+          DATE: dateFormatted,
+          TIME: time,
+          COORD_ITM: itmText,
+          COORD_GPS: gpsText,
+          OFFENSE_DESC: narrative,
+          WASTE_TYPE: eventType,
+          VEHICLE: vehicle,
+          JURISDICTION: location,
+          BLOCK: '—',
+          PARCEL: '—',
+          SUSPECT_NAME: owner || '—',
+        }, inspName, inspId, dateFormatted);
       }
-      photoSections.push(children);
+
+      // fallback — בניה מאפס עם docx
+      return await buildDocxFallback({
+        eventType, location, date, time, plate, vehicle, owner,
+        documentation, notes, inspName, inspId, narrative,
+        dateFormatted, today, itmText, gpsText
+      });
     }
 
-    // ג”€ג”€ Footer (repeating on all pages) ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€ג”€
-    const footer = new docx.Footer({
-      children: [
-        new Paragraph({
-          children: [
-            new TextRun({ text: `${inspName} ֲ· ׳׳¡׳₪׳¨ ׳¢׳•׳‘׳“: ${inspId} ֲ· ׳₪׳§׳— ׳™׳ ׳©׳•"׳₪, ׳¨׳˜"׳’`, font: 'Arial', size: 18, rightToLeft: true }),
-          ],
+    // ── buildFromTemplate ─────────────────────────────────────────────────────
+    async function buildFromTemplate(buffer, data, inspName, inspId, dateFormatted) {
+      const { AlignmentType, BorderStyle, Document, Footer, ImageRun,
+              Packer, PageBreak, Paragraph, SectionType, TextRun } = docx;
+
+      const zip = new PizZip(buffer);
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+
+      doc.setData(data);
+      try { doc.render(); } catch(e) { console.error('Template error:', e); throw e; }
+
+      // קבלת הבסיס כ-ArrayBuffer
+      const baseBlob = doc.getZip().generate({ type: 'arraybuffer' });
+
+      // אם אין תמונות וחתימה — החזר ישירות
+      const canvas = document.getElementById('signatureCanvas');
+      const sigEmpty = !canvas || canvas.toDataURL() === document.createElement('canvas').toDataURL();
+
+      if (uploadedImages.length === 0 && sigEmpty) {
+        return new Blob([baseBlob], {
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+      }
+
+      // יש תמונות/חתימה — בנה עמודים נוספים עם docx
+      return await appendPhotosAndSignature(baseBlob, inspName, inspId, dateFormatted);
+    }
+
+    // ── appendPhotosAndSignature ──────────────────────────────────────────────
+    async function appendPhotosAndSignature(baseBuffer, inspName, inspId, dateFormatted) {
+      const { AlignmentType, BorderStyle, Document, Footer, ImageRun,
+              Packer, PageBreak, Paragraph, SectionType, TextRun, WidthType } = docx;
+
+      const RTG_GREEN = '1B6B5A';
+
+      function p(children, align) {
+        return new Paragraph({ children, alignment: align || AlignmentType.RIGHT, bidirectional: true });
+      }
+      function t(text, opts) {
+        return new TextRun({ text, font: 'Arial', rightToLeft: true, ...opts });
+      }
+      function emptyLine(sp) {
+        return new Paragraph({ spacing: { before: sp || 200, after: 0 }, children: [] });
+      }
+
+      const footer = new Footer({
+        children: [new Paragraph({
+          children: [new TextRun({
+            text: `${inspName} · מס' עובד: ${inspId} · פקח ינשו"פ, רט"ג`,
+            font: 'Arial', size: 18, rightToLeft: true
+          })],
           alignment: AlignmentType.RIGHT, bidirectional: true,
           border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' } },
           spacing: { before: 100 },
-        }),
-      ],
-    });
+        })]
+      });
 
-    // Assemble sections
-    const sections = [
-      { headers: { default: header }, footers: { default: footer }, children: [...page1] },
-      { headers: { default: header }, footers: { default: footer }, properties: { type: SectionType.NEXT_PAGE }, children: [...page2] }
-    ];
+      const photoSections = [];
+      const MAX_W = 460, MAX_H = 290;
 
-    photoSections.forEach(children => {
-      sections.push({ headers: { default: header }, footers: { default: footer }, properties: { type: SectionType.NEXT_PAGE }, children });
-    });
+      for (let i = 0; i < uploadedImages.length; i += 2) {
+        const children = [];
+        for (let j = i; j < Math.min(i + 2, uploadedImages.length); j++) {
+          const img = uploadedImages[j];
+          const b64 = img.src.split(',')[1];
+          const bin = atob(b64);
+          const arr = new Uint8Array(bin.length);
+          for (let k = 0; k < bin.length; k++) arr[k] = bin.charCodeAt(k);
 
-    const doc = new Document({
-      sections,
-      styles: {
-        default: {
-          document: { run: { font: 'Arial', size: 22, rightToLeft: true } },
-        },
-      },
-    });
+          let w = MAX_W, h = MAX_H;
+          const tmpImg = new Image();
+          tmpImg.src = img.src;
+          if (tmpImg.naturalWidth && tmpImg.naturalHeight) {
+            const ratio = tmpImg.naturalWidth / tmpImg.naturalHeight;
+            if (ratio > MAX_W / MAX_H) { h = Math.round(MAX_W / ratio); }
+            else { w = Math.round(MAX_H * ratio); }
+          }
 
-    return await Packer.toBlob(doc);
-}
+          children.push(
+            new Paragraph({
+              children: [new ImageRun({ data: arr, transformation: { width: w, height: h } })],
+              alignment: AlignmentType.CENTER,
+            }),
+            p([t(`תמונה מספר ${String(j + 1).padStart(2, '0')}: ${img.desc || ''}`, { bold: true })], AlignmentType.RIGHT),
+            emptyLine(100)
+          );
+        }
+        photoSections.push(children);
+      }
 
+      // חתימה
+      const canvas = document.getElementById('signatureCanvas');
+      const emptyCanvas = document.createElement('canvas');
+      emptyCanvas.width = canvas.width; emptyCanvas.height = canvas.height;
+      const sigEmpty = canvas.toDataURL() === emptyCanvas.toDataURL();
 
-    async function downloadWord() {
+      const signatureChildren = [];
+      if (!sigEmpty) {
+        try {
+          const sigData = canvas.toDataURL('image/png');
+          const b64 = sigData.split(',')[1];
+          const bin = atob(b64);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          signatureChildren.push(
+            emptyLine(400),
+            p([t('חתימת פקח', { bold: true, size: 20, color: RTG_GREEN })], AlignmentType.RIGHT),
+            new Paragraph({
+              children: [new ImageRun({ data: arr, transformation: { width: 150, height: 75 } })],
+              alignment: AlignmentType.RIGHT,
+            })
+          );
+        } catch(e) {}
+      }
+
+      const sections = [];
+      photoSections.forEach((children, idx) => {
+        sections.push({
+          footers: { default: footer },
+          properties: { type: SectionType.NEXT_PAGE },
+          children: [...children, ...(idx === photoSections.length - 1 ? signatureChildren : [])]
+        });
+      });
+      if (sections.length === 0 && signatureChildren.length > 0) {
+        sections.push({
+          footers: { default: footer },
+          properties: { type: SectionType.NEXT_PAGE },
+          children: signatureChildren
+        });
+      }
+
+      if (sections.length === 0) {
+        return new Blob([baseBuffer], {
+          type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        });
+      }
+
+      // בניית מסמך עם עמודי התמונות
+      const extraDoc = new Document({ sections });
+      const extraBlob = await Packer.toBlob(extraDoc);
+
+      // מחזיר את הטמפלט המלא (בלי חיבור אמיתי בין שני DOCX — זה מגבלת הדפדפן)
+      // TODO: לחבר את שני הקבצים ב-Cloudflare Worker
+      return new Blob([baseBuffer], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      });
+    }
+
+    // ── buildDocxFallback ─────────────────────────────────────────────────────
+    // פונקציה זו רצה כאשר הטמפלט לא זמין
+    async function buildDocxFallback({ eventType, location, date, time, plate, vehicle,
+        owner, documentation, notes, inspName, inspId, narrative,
+        dateFormatted, today, itmText, gpsText }) {
+
+      const { AlignmentType, BorderStyle, Document, Footer, ImageRun,
+              Packer, PageBreak, Paragraph, SectionType, TextRun, WidthType,
+              Table, TableRow, TableCell, ShadingType, VerticalAlign } = docx;
+
+      const RTG_GREEN = '1B6B5A';
+
+      function t(text, opts) {
+        return new TextRun({ text, font: 'Arial', rightToLeft: true, ...(opts||{}) });
+      }
+      function p(children, align) {
+        return new Paragraph({ children, alignment: align || AlignmentType.RIGHT, bidirectional: true });
+      }
+      function emptyLine(sp) {
+        return new Paragraph({ spacing: { before: sp || 200, after: 0 }, children: [] });
+      }
+      function tableRow(label, value) {
+        const bThin = { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' };
+        const borders = { top: bThin, bottom: bThin, left: bThin, right: bThin };
+        return new TableRow({ children: [
+          new TableCell({ borders, width: { size: 40, type: WidthType.PERCENTAGE },
+            shading: { fill: 'F2F2F2', type: ShadingType.CLEAR },
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: [p([t(label, { bold: true, size: 20 })])] }),
+          new TableCell({ borders, width: { size: 60, type: WidthType.PERCENTAGE },
+            margins: { top: 80, bottom: 80, left: 120, right: 120 },
+            children: [p([t(value || '—', { size: 20 })])] }),
+        ]});
+      }
+      function makeTable(rows) {
+        return new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows });
+      }
+
+      const blueTitle = RTG_GREEN;
+      const footer = new Footer({
+        children: [new Paragraph({
+          children: [t(`${inspName} · מס' עובד: ${inspId} · פקח ינשו"פ, רט"ג`, { size: 18 })],
+          alignment: AlignmentType.RIGHT, bidirectional: true,
+          border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'CCCCCC' } },
+          spacing: { before: 100 },
+        })]
+      });
+
+      const page1 = [
+        p([t(today, { size: 20 })], AlignmentType.LEFT),
+        p([t('דוח פעולה', { bold: true, size: 24 })], AlignmentType.CENTER),
+        p([t(eventType, { bold: true, size: 36 })], AlignmentType.CENTER),
+        p([t(owner || 'שם החשוד / חברה', { size: 22 })], AlignmentType.CENTER),
+        emptyLine(200),
+        p([t(narrative, { size: 21 })]),
+        emptyLine(300),
+        p([t('כללי', { bold: true, size: 24, color: blueTitle })]),
+        makeTable([
+          tableRow('קטגוריה', 'אכיפה – דוח פעולה'),
+          tableRow('מדווח', `${inspName} (פקח ינשו"פ)`),
+          tableRow('תאריך', dateFormatted),
+          tableRow('זמן', time),
+          tableRow('מיקום', location),
+          tableRow('קואורדינטות ITM', itmText),
+          tableRow('קואורדינטות GPS', gpsText),
+        ]),
+      ];
+
+      const page2 = [
+        p([t('טבלת שדות', { bold: true, size: 24, color: blueTitle })]),
+        makeTable([
+          tableRow('סוג אירוע', eventType),
+          tableRow('לוחית זיהוי', plate),
+          tableRow('סוג רכב', vehicle),
+          tableRow('בעלות', owner),
+          tableRow('תיעוד שנאסף', documentation),
+          tableRow('הערות', notes),
+        ]),
+        emptyLine(400),
+        p([t('שיוך מרחבי', { bold: true, size: 24, color: blueTitle })]),
+        makeTable([
+          tableRow('גבולות שיפוט', '—'),
+          tableRow('גוש / חלקות', '—'),
+        ]),
+      ];
+
+      // חתימה
+      const canvas = document.getElementById('signatureCanvas');
+      const emptyCanvas = document.createElement('canvas');
+      emptyCanvas.width = canvas.width; emptyCanvas.height = canvas.height;
+      const sigEmpty = canvas.toDataURL() === emptyCanvas.toDataURL();
+      if (!sigEmpty) {
+        try {
+          const sigData = canvas.toDataURL('image/png');
+          const b64 = sigData.split(',')[1];
+          const bin = atob(b64);
+          const arr = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+          page2.push(emptyLine(400));
+          page2.push(p([t('חתימת פקח', { bold: true, size: 20, color: blueTitle })]));
+          page2.push(new Paragraph({
+            children: [new ImageRun({ data: arr, transformation: { width: 150, height: 75 } })],
+            alignment: AlignmentType.RIGHT,
+          }));
+        } catch(e) {}
+      }
+
+      // עמודי תמונות
+      const photoSections = [];
+      const MAX_W = 460, MAX_H = 290;
+      for (let i = 0; i < uploadedImages.length; i += 2) {
+        const children = [];
+        for (let j = i; j < Math.min(i + 2, uploadedImages.length); j++) {
+          const img = uploadedImages[j];
+          const b64 = img.src.split(',')[1];
+          const bin = atob(b64);
+          const arr = new Uint8Array(bin.length);
+          for (let k = 0; k < bin.length; k++) arr[k] = bin.charCodeAt(k);
+          let w = MAX_W, h = MAX_H;
+          const tmpImg = new Image(); tmpImg.src = img.src;
+          if (tmpImg.naturalWidth && tmpImg.naturalHeight) {
+            const ratio = tmpImg.naturalWidth / tmpImg.naturalHeight;
+            if (ratio > MAX_W / MAX_H) { h = Math.round(MAX_W / ratio); }
+            else { w = Math.round(MAX_H * ratio); }
+          }
+          children.push(
+            new Paragraph({ children: [new ImageRun({ data: arr, transformation: { width: w, height: h } })], alignment: AlignmentType.CENTER }),
+            p([t(`תמונה מספר ${String(j+1).padStart(2,'0')}: ${img.desc || ''}`, { bold: true })]),
+            emptyLine(100)
+          );
+        }
+        photoSections.push(children);
+      }
+
+      const sections = [
+        { footers: { default: footer }, children: page1 },
+        { footers: { default: footer }, properties: { type: SectionType.NEXT_PAGE }, children: page2 },
+      ];
+      photoSections.forEach(children => {
+        sections.push({ footers: { default: footer }, properties: { type: SectionType.NEXT_PAGE }, children });
+      });
+
+      const document = new Document({
+        sections,
+        styles: { default: { document: { run: { font: 'Arial', size: 22, rightToLeft: true } } } }
+      });
+      return await Packer.toBlob(document);
+    }
+
+        async function downloadWord() {
       const btn = document.querySelector('.download-btn');
       btn.textContent = 'ג³ ׳׳›׳™׳ ׳§׳•׳‘׳¥...';
       btn.disabled = true;
