@@ -1,4 +1,4 @@
-const CACHE = 'ynshouf-v3';
+const CACHE = 'ynshouf-v4';
 
 // App shell — cache immediately on install
 const SHELL = [
