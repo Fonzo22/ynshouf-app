@@ -1,0 +1,25 @@
+{
+  "name": "ינשו\"פ — מערכת דוחות אכיפה",
+  "short_name": "ינשו\"פ",
+  "description": "יחידת אכיפת טבע וסביבה — כתיבת דוחות שטח",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f2d1a",
+  "theme_color": "#1a4a28",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "utilities"]
+}
