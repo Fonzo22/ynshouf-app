@@ -1805,21 +1805,38 @@ ${currentText}
       // אם יש טמפלט — השתמש ב-docxtemplater
       if (templateBuffer && typeof PizZip !== 'undefined' && typeof Docxtemplater !== 'undefined') {
         return await buildFromTemplate(templateBuffer, {
-          DOC_DATE: today,
-          CASE_ID: plate || '—',
-          CATEGORY: 'אכיפה – דוח פעולה',
-          INSPECTOR: inspName + (inspId ? ` (${inspId})` : ''),
+          // כותרות ותאריך
+          REPORT_DATE: today,
+          REPORT_TITLE_MAIN: eventType || 'כותרת ראשית',
+          REPORT_TITLE_SUB: location ? `${location}` : 'כותרת משנית',
+          // מהות האירוע
+          INCIDENT_DESCRIPTION: narrative,
+          // טבלת כללי
+          REPORT_ID: plate || '—',
+          INSPECTOR_NAME: inspName,
+          EMPLOYEE_NUM: inspId || '—',
+          REGION: 'נגב מערבי',
           DATE: dateFormatted,
-          TIME: time,
-          COORD_ITM: itmText,
-          COORD_GPS: gpsText,
-          OFFENSE_DESC: narrative,
-          WASTE_TYPE: eventType,
-          VEHICLE: vehicle,
-          JURISDICTION: location,
-          BLOCK: '—',
-          PARCEL: '—',
-          SUSPECT_NAME: owner || '—',
+          TIME: time || '—',
+          COORDS_ITM: itmText || '—',
+          COORDS_GPS: gpsText || '—',
+          // טבלת שדות
+          VIOLATION_DESC: narrative,
+          WASTE_TYPE: eventType || '—',
+          LICENSE_PLATE: plate || '—',
+          VEHICLE_TYPE: vehicle || '—',
+          OWNER_NAME: owner || '—',
+          COMPANY_ID: '—',
+          ADDRESS: '—',
+          // שיוך מרחבי
+          JURISDICTION: location || '—',
+          CADASTRE_BLOCKS: '—',
+          CADASTRE_PARCELS: '—',
+          // כיתובי תמונות
+          PHOTO_1_CAPTION: uploadedImages[0]?.desc || 'תמונה 1',
+          PHOTO_2_CAPTION: uploadedImages[1]?.desc || 'תמונה 2',
+          PHOTO_3_CAPTION: uploadedImages[2]?.desc || 'תמונה 3',
+          PHOTO_4_CAPTION: uploadedImages[3]?.desc || 'תמונה 4',
         }, inspName, inspId, dateFormatted);
       }
 
