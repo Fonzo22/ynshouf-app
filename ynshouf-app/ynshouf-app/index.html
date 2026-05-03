@@ -221,6 +221,7 @@ body {
 .card-hdr.open { border-bottom-color: var(--line); }
 
 .card-icon-wrap {
+  pointer-events: none;
   width: 32px; height: 32px;
   border-radius: 8px;
   background: var(--mist);
@@ -229,6 +230,7 @@ body {
   flex-shrink: 0;
 }
 .card-title {
+  pointer-events: none;
   font-size: 13px;
   font-weight: 700;
   color: var(--forest);
@@ -236,6 +238,7 @@ body {
   letter-spacing: 0.1px;
 }
 .card-badge {
+  pointer-events: none;
   font-size: 10px;
   font-weight: 700;
   color: var(--sage);
@@ -246,6 +249,7 @@ body {
 }
 .card-badge.show { display: block; }
 .card-arrow {
+  pointer-events: none;
   color: var(--dust);
   font-size: 10px;
   transition: transform .25s;
@@ -553,7 +557,7 @@ input[type=file] { display: none; }
 
   <!-- אירוע -->
   <div class="card">
-    <div class="card-hdr open" onclick="tog('incident', this)">
+    <div class="card-hdr open" onclick="tog('incident')">
       <div class="card-icon-wrap">📋</div>
       <span class="card-title">זמן, סוג ומיקום</span>
       <span class="card-badge" id="badge-incident"></span>
@@ -609,7 +613,7 @@ input[type=file] { display: none; }
 
   <!-- קואורדינטות -->
   <div class="card">
-    <div class="card-hdr" onclick="tog('coords', this)">
+    <div class="card-hdr" onclick="tog('coords')">
       <div class="card-icon-wrap">📍</div>
       <span class="card-title">קואורדינטות</span>
       <span class="card-arrow" id="arr-coords">▼</span>
@@ -633,7 +637,7 @@ input[type=file] { display: none; }
 
   <!-- רכב / עבריין -->
   <div class="card">
-    <div class="card-hdr" onclick="tog('veh', this)">
+    <div class="card-hdr" onclick="tog('veh')">
       <div class="card-icon-wrap">🚗</div>
       <span class="card-title">רכב ובעלים</span>
       <span class="card-arrow" id="arr-veh">▼</span>
@@ -683,7 +687,7 @@ input[type=file] { display: none; }
 
   <!-- מהות -->
   <div class="card">
-    <div class="card-hdr open" onclick="tog('narr', this)">
+    <div class="card-hdr open" onclick="tog('narr')">
       <div class="card-icon-wrap">📝</div>
       <span class="card-title">מהות האירוע</span>
       <span class="card-arrow open" id="arr-narr">▼</span>
@@ -698,7 +702,7 @@ input[type=file] { display: none; }
 
   <!-- תמונות -->
   <div class="card">
-    <div class="card-hdr" onclick="tog('photos', this)">
+    <div class="card-hdr" onclick="tog('photos')">
       <div class="card-icon-wrap">📷</div>
       <span class="card-title">תמונות</span>
       <span class="card-badge" id="badge-photos"></span>
@@ -785,12 +789,14 @@ function showPage(p) {
   if(p==='hist') renderHist();
 }
 
-function tog(name, hdrEl) {
-  const bd = $('bd-'+name), arr = $('arr-'+name);
-  const closing = !bd.classList.contains('collapsed');
+function tog(name) {
+  const bd = $('bd-'+name);
+  const arr = $('arr-'+name);
+  const hdr = bd.previousElementSibling;
+  const isCollapsed = bd.classList.contains('collapsed');
   bd.classList.toggle('collapsed');
-  arr.classList.toggle('open');
-  if(hdrEl) hdrEl.classList.toggle('open', !closing);
+  if(arr) arr.classList.toggle('open', isCollapsed);
+  if(hdr) hdr.classList.toggle('open', isCollapsed);
 }
 
 function updateProgress() {
