@@ -1,4 +1,4 @@
-const CACHE = 'ynshouf-v2';
+const CACHE = 'ynshouf-v3';
 const ASSETS = [
   './',
   './index.html',
