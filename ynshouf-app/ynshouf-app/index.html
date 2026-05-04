@@ -883,6 +883,36 @@ async function genReport() {
       delimiters: { start: '{{', end: '}}' }
     });
     doc.render(vars);
+
+    // תיקון RTL בכל קבצי ה-XML
+    var zipObj = doc.getZip();
+    var xmlFiles = ['word/document.xml', 'word/styles.xml', 'word/header1.xml', 'word/footer1.xml'];
+    xmlFiles.forEach(function(fname) {
+      try {
+        var xmlStr = zipObj.file(fname).asText();
+        // 1. jc left לימין
+        xmlStr = xmlStr.replace(/<w:jc w:val="left"\/>/g, '<w:jc w:val="right"/>');
+        // 2. הוסף bidi לכל pPr
+        xmlStr = xmlStr.replace(/<w:pPr>/g, '<w:pPr><w:bidi/>');
+        xmlStr = xmlStr.replace(/<w:bidi\/><w:bidi\/>/g, '<w:bidi/>');
+        // 3. הוסף rtl לכל rPr
+        xmlStr = xmlStr.replace(/<w:rPr>/g, '<w:rPr><w:rtl/>');
+        xmlStr = xmlStr.replace(/<w:rtl\/><w:rtl\/>/g, '<w:rtl/>');
+        // 4. הוסף lang עברית
+        xmlStr = xmlStr.replace(/<w:rtl\/>/g, '<w:rtl/><w:lang w:bidi="he-IL"/>');
+        xmlStr = xmlStr.replace(/(<w:lang w:bidi="he-IL"\/>){2,}/g, '<w:lang w:bidi="he-IL"/>');
+        zipObj.file(fname, xmlStr);
+      } catch(e) {}
+    });
+    // תיקון settings.xml
+    try {
+      var settings = zipObj.file('word/settings.xml').asText();
+      if (settings.indexOf('<w:bidi/>') === -1) {
+        settings = settings.replace('<w:displayBackgroundShape/>', '<w:displayBackgroundShape/><w:bidi/>');
+        zipObj.file('word/settings.xml', settings);
+      }
+    } catch(e) {}
+
     var blob = doc.getZip().generate({
       type: 'blob',
       mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
