@@ -821,6 +821,12 @@ function getCap(n) {
   return id ? (photos[id].cap || '') : '';
 }
 
+function getPhotoLabel(n) {
+  var nn = String(n).padStart(2, '0');
+  var cap = getCap(n);
+  return cap ? 'תמונה מספר ' + nn + ' : ' + cap : 'תמונה מספר ' + nn + ' : ';
+}
+
 async function genReport() {
   var errs = [];
   if (!$('inspName').value) errs.push('שם פקח');
@@ -859,10 +865,16 @@ async function genReport() {
       JURISDICTION: $('iJuris').value,
       CADASTRE_BLOCKS: $('iBlock').value,
       CADASTRE_PARCELS: $('iParcel').value,
-      PHOTO_1_CAPTION: getCap(1),
-      PHOTO_2_CAPTION: getCap(2),
-      PHOTO_3_CAPTION: getCap(3),
-      PHOTO_4_CAPTION: getCap(4)
+      PHOTO_1_CAPTION: getPhotoLabel(1),
+      PHOTO_2_CAPTION: getPhotoLabel(2),
+      PHOTO_3_CAPTION: getPhotoLabel(3),
+      PHOTO_4_CAPTION: getPhotoLabel(4),
+      PHOTO_5_CAPTION: getPhotoLabel(5),
+      PHOTO_6_CAPTION: getPhotoLabel(6),
+      PHOTO_7_CAPTION: getPhotoLabel(7),
+      PHOTO_8_CAPTION: getPhotoLabel(8),
+      PHOTO_9_CAPTION: getPhotoLabel(9),
+      PHOTO_10_CAPTION: getPhotoLabel(10)
     };
     var zip = new PizZip(buf);
     var doc = new window.docxtemplater(zip, {
