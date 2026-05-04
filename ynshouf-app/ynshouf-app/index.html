@@ -136,7 +136,27 @@ input[type=file]{display:none}
 .toast.err{background:var(--red);border-color:#8a1a0e}
 .toast.warn{background:#7a4d00;border-color:#5a3800}
 
-@media(max-width:380px){.card-body{grid-template-columns:1fr}.hdr-sub{display:none}}
+/* AI BUTTON */
+.ai-row{display:flex;gap:8px;align-items:flex-start}
+.ai-row textarea{flex:1}
+.btn-ai{background:var(--forest);color:#fff;border:none;border-radius:8px;padding:10px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;display:flex;align-items:center;gap:6px;height:42px;transition:background .15s;flex-shrink:0}
+.btn-ai:hover{background:var(--moss)}
+.btn-ai.loading{background:var(--dust);pointer-events:none}
+.ai-fix-row{display:flex;gap:8px;margin-top:8px}
+.ai-fix-input{flex:1;border:1.5px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);color:var(--ink);background:#f8fcfa;direction:rtl}
+.ai-fix-input:focus{outline:none;border-color:var(--ember);background:#fff}
+.btn-ai-fix{background:var(--amber,#e8820a);color:#fff;border:none;border-radius:8px;padding:9px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;transition:background .15s}
+.btn-ai-fix:hover{opacity:.85}
+.ai-status{font-size:11px;color:var(--sage);margin-top:4px;min-height:16px}
+
+/* SIGNATURE */
+.sig-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:12px;padding:16px}
+.sig-title{font-size:11px;font-weight:700;color:var(--dust);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+.sig-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.sig-line{border-top:1.5px solid var(--ink);margin-top:8px;padding-top:6px;font-size:11px;color:var(--dust);text-align:center}
+
+@media(max-width:380px){.card-body{grid-template-columns:1fr}.hdr-sub{display:none}.sig-fields{grid-template-columns:1fr}}
+<script src="https://unpkg.com/proj4@2.9.0/dist/proj4.js"></script>
 </style>
 </head>
 <body>
@@ -184,7 +204,7 @@ input[type=file]{display:none}
     <div class="card-body" id="bd-incident">
       <div class="field">
         <label><span class="req">* </span>תאריך</label>
-        <input id="iDate" type="date" oninput="genId();upProg()">
+        <input id="iDate" type="date" oninput="genId();upProg();updateSig()">
       </div>
       <div class="field">
         <label><span class="req">* </span>שעה</label>
@@ -237,16 +257,17 @@ input[type=file]{display:none}
     </div>
     <div class="card-body one collapsed" id="bd-coords">
       <div class="field">
-        <label>קואורדינטות ITM</label>
-        <input id="cITM" type="text" placeholder="X: 180000, Y: 560000" style="direction:ltr;text-align:left">
-      </div>
-      <div class="field">
-        <label>קואורדינטות GPS</label>
+        <label>קואורדינטות GPS (WGS84)</label>
         <div class="gps-row">
           <input id="cGPS" type="text" placeholder="31.1234, 34.5678" style="direction:ltr;text-align:left">
           <button class="btn-gps" onclick="getGPS()">📡 GPS</button>
         </div>
       </div>
+      <div class="field">
+        <label>קואורדינטות ITM</label>
+        <input id="cITM" type="text" placeholder="ימולא אוטומטית" style="direction:ltr;text-align:left" readonly>
+      </div>
+      <div class="ai-status" id="govmapStatus"></div>
     </div>
   </div>
 
@@ -310,7 +331,15 @@ input[type=file]{display:none}
     <div class="card-body one" id="bd-narr">
       <div class="field">
         <label><span class="req">* </span>תיאור מפורט</label>
-        <textarea id="iDesc" placeholder="תאר את האירוע בפירוט: מה נצפה, מתי, כיצד, מה ננקט..." oninput="upProg()"></textarea>
+        <div class="ai-row">
+          <textarea id="iDesc" placeholder="תאר את האירוע בפירוט: מה נצפה, מתי, כיצד, מה ננקט..." oninput="upProg()"></textarea>
+          <button class="btn-ai" id="btnAI" onclick="runAI()">✦ AI</button>
+        </div>
+        <div class="ai-status" id="aiStatus"></div>
+        <div class="ai-fix-row">
+          <input class="ai-fix-input" id="aiFixText" placeholder='למשל: "הוסף שהרכב נסע לכיוון צפון"'>
+          <button class="btn-ai-fix" onclick="runAIFix()">תיקון ✦</button>
+        </div>
       </div>
     </div>
   </div>
@@ -353,6 +382,26 @@ input[type=file]{display:none}
     </div>
   </div>
 
+  <!-- חתימה -->
+  <div class="sig-card">
+    <div class="sig-title">חתימה ואישור</div>
+    <div class="sig-fields">
+      <div class="field">
+        <label>שם פקח</label>
+        <input id="sigName" type="text" placeholder="שם מלא" readonly style="background:#f0f9f4;color:var(--dust)">
+      </div>
+      <div class="field">
+        <label>מספר עובד</label>
+        <input id="sigNum" type="text" placeholder="מס׳ עובד" readonly style="background:#f0f9f4;color:var(--dust)">
+      </div>
+      <div class="field span2">
+        <label>תאריך הדוח</label>
+        <input id="sigDate" type="text" readonly style="background:#f0f9f4;color:var(--dust)">
+      </div>
+    </div>
+    <div class="sig-line">חתימת הפקח: ___________________________</div>
+  </div>
+
   <div style="height:16px"></div>
 </div>
 
@@ -392,6 +441,7 @@ window.onload = function() {
   $('iTime').value = pad(now.getHours()) + ':' + pad(now.getMinutes());
   genId();
   upProg();
+  updateSig();
 };
 
 function showPage(p) {
@@ -441,16 +491,129 @@ function fillSub() {
   if (m[t] && !$('iSub').value) $('iSub').value = m[t];
 }
 
+var WORKER = 'https://ynshouf-proxy.fonzoahrak.workers.dev';
+
+// הגדרת מערכת הקואורדינטות הישראלית ITM
+proj4.defs('EPSG:2039', '+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs');
+
 function getGPS() {
   if (!navigator.geolocation) { toast('מכשיר זה אינו תומך ב-GPS', 'err'); return; }
   toast('מאתר מיקום...', 'warn');
+  var status = $('govmapStatus');
   navigator.geolocation.getCurrentPosition(
     function(pos) {
-      $('cGPS').value = pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6);
-      toast('מיקום GPS נטען ✓');
+      var lat = pos.coords.latitude;
+      var lng = pos.coords.longitude;
+      $('cGPS').value = lat.toFixed(6) + ', ' + lng.toFixed(6);
+      // המרה ל-ITM
+      try {
+        var itm = proj4('EPSG:4326', 'EPSG:2039', [lng, lat]);
+        var x = Math.round(itm[0]);
+        var y = Math.round(itm[1]);
+        $('cITM').value = x + ', ' + y;
+        toast('GPS נטען ✓ — מאתר גוש/חלקה...');
+        status.textContent = 'מאתר גוש וחלקה...';
+        // Govmap
+        fetch(WORKER + '/govmap?x=' + x + '&y=' + y)
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.block) {
+              $('iBlock').value = d.block;
+              $('iParcel').value = d.parcel || '';
+              if (d.jurisdiction) $('iJuris').value = d.jurisdiction;
+              status.textContent = 'גוש ' + d.block + ', חלקה ' + (d.parcel || '—') + ' נטענו ✓';
+              toast('גוש וחלקה נטענו ✓');
+            } else {
+              status.textContent = 'לא נמצאו נתוני גוש/חלקה';
+            }
+          })
+          .catch(function() {
+            status.textContent = 'Govmap לא זמין — קואורדינטות נטענו';
+          });
+      } catch(e) {
+        $('cITM').value = 'שגיאת המרה';
+        toast('GPS נטען ✓');
+      }
     },
-    function() { toast('שגיאה באיתור מיקום', 'err'); }
+    function() { toast('שגיאה באיתור מיקום', 'err'); },
+    { enableHighAccuracy: true, timeout: 10000 }
   );
+}
+
+// ── AI ──
+function buildPrompt() {
+  return 'אתה פקח אכיפה סביבתית ביחידת ינשו"פ. כתוב מהות אירוע לדוח רשמי בעברית תקנית.\n' +
+    'פרטים:\n' +
+    'פקח: ' + $('inspName').value + ' | מס׳ ' + $('inspNum').value + '\n' +
+    'תאריך: ' + $('iDate').value + ' שעה: ' + $('iTime').value + '\n' +
+    'סוג: ' + $('iType').value + '\n' +
+    'מיקום: ' + $('iLoc').value + '\n' +
+    'לוחית: ' + $('vPlate').value + ' | רכב: ' + $('vType').value + '\n' +
+    'בעלים: ' + $('vOwner').value + '\n' +
+    'פסולת: ' + $('vWaste').value + '\n' +
+    'תיאור גולמי: ' + $('iDesc').value + '\n\n' +
+    'כתוב 3-5 משפטים רשמיים בגוף ראשון רבים. ללא כותרות.';
+}
+
+async function runAI() {
+  var btn = $('btnAI');
+  var status = $('aiStatus');
+  btn.classList.add('loading');
+  btn.textContent = '...';
+  status.textContent = 'מייצר תיאור...';
+  try {
+    var resp = await fetch(WORKER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: buildPrompt() })
+    });
+    var data = await resp.json();
+    var text = data.text || data.content || data.result || '';
+    if (text) {
+      $('iDesc').value = text;
+      status.textContent = '✓ נוצר על ידי AI';
+      upProg();
+    } else {
+      status.textContent = 'לא התקבלה תשובה';
+    }
+  } catch(e) {
+    status.textContent = 'שגיאה: ' + e.message;
+    toast('שגיאה בחיבור ל-AI', 'err');
+  }
+  btn.classList.remove('loading');
+  btn.textContent = '✦ AI';
+}
+
+async function runAIFix() {
+  var fix = $('aiFixText').value.trim();
+  var current = $('iDesc').value.trim();
+  if (!fix || !current) { toast('מלא תיאור והוראת תיקון', 'warn'); return; }
+  var status = $('aiStatus');
+  status.textContent = 'מתקן...';
+  try {
+    var prompt = 'להלן מהות אירוע קיים:\n"' + current + '"\n\nהוראת עדכון: ' + fix + '\n\nכתוב מחדש את המהות עם השינוי המבוקש. אותו סגנון רשמי. ללא כותרות.';
+    var resp = await fetch(WORKER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt })
+    });
+    var data = await resp.json();
+    var text = data.text || data.content || data.result || '';
+    if (text) {
+      $('iDesc').value = text;
+      $('aiFixText').value = '';
+      status.textContent = '✓ תוקן';
+      upProg();
+    }
+  } catch(e) {
+    status.textContent = 'שגיאה בתיקון';
+  }
+}
+
+function updateSig() {
+  $('sigName').value = $('inspName').value;
+  $('sigNum').value = $('inspNum').value;
+  $('sigDate').value = $('iDate').value ? new Date($('iDate').value).toLocaleDateString('he-IL') : '';
 }
 
 function pickPhoto(s) { curSlot = s; $('fileIn').click(); }
@@ -479,6 +642,7 @@ function delPhoto(e, s) {
 
 function saveInsp() {
   localStorage.setItem('yns_insp', JSON.stringify({ n: $('inspName').value, e: $('inspNum').value }));
+  updateSig();
 }
 
 function collect() {
