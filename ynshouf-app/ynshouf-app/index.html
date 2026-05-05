@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/pizzip@3.1.7/dist/pizzip.min.js"></script>
 <script src="https://unpkg.com/docxtemplater@3.37.12/build/docxtemplater.js"></script>
+<script src="https://unpkg.com/proj4@2.9.0/dist/proj4.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -172,7 +173,6 @@ input[type=file]{display:none}
 .pg-num{position:absolute;top:4px;right:6px;background:rgba(13,31,23,.6);color:#fff;font-size:10px;font-weight:700;border-radius:4px;padding:1px 5px}
 
 @media(max-width:380px){.card-body{grid-template-columns:1fr}.hdr-sub{display:none}.sig-fields{grid-template-columns:1fr}}
-<script src="https://unpkg.com/proj4@2.9.0/dist/proj4.js"></script>
 </style>
 </head>
 <body>
@@ -201,11 +201,11 @@ input[type=file]{display:none}
   <div class="insp-card">
     <div class="field">
       <label>שם פקח</label>
-      <input id="inspName" type="text" placeholder="שם מלא" oninput="saveInsp();upProg()">
+      <input id="inspName" type="text" placeholder="שם מלא" autocomplete="off" oninput="saveInsp();upProg()">
     </div>
     <div class="field">
       <label>מספר פקח</label>
-      <input id="inspNum" type="text" placeholder="מס׳ עובד" oninput="saveInsp();upProg()">
+      <input id="inspNum" type="text" placeholder="מס׳ עובד" autocomplete="off" oninput="saveInsp();upProg()">
     </div>
   </div>
 
@@ -220,11 +220,11 @@ input[type=file]{display:none}
     <div class="card-body" id="bd-incident">
       <div class="field">
         <label><span class="req">* </span>תאריך</label>
-        <input id="iDate" type="date" oninput="genId();upProg();updateSig()">
+        <input id="iDate" type="date" autocomplete="off" oninput="genId();upProg();updateSig()">
       </div>
       <div class="field">
         <label><span class="req">* </span>שעה</label>
-        <input id="iTime" type="time" oninput="upProg()">
+        <input id="iTime" type="time" autocomplete="off" oninput="upProg()">
       </div>
       <div class="field span2">
         <label><span class="req">* </span>סוג האירוע</label>
@@ -244,23 +244,23 @@ input[type=file]{display:none}
       </div>
       <div class="field span2">
         <label>כותרת משנה</label>
-        <input id="iSub" type="text" placeholder="פירוט נוסף לכותרת הדוח">
+        <input id="iSub" type="text" placeholder="פירוט נוסף לכותרת הדוח" autocomplete="off">
       </div>
       <div class="field span2">
         <label><span class="req">* </span>מיקום / כתובת</label>
-        <input id="iLoc" type="text" placeholder="תיאור מיקום האירוע" oninput="upProg()">
+        <input id="iLoc" type="text" placeholder="תיאור מיקום האירוע" autocomplete="off" oninput="upProg()">
       </div>
       <div class="field span2">
         <label>רשות מקומית / שיפוט</label>
-        <input id="iJuris" type="text" placeholder="עיר / מועצה אזורית">
+        <input id="iJuris" type="text" placeholder="עיר / מועצה אזורית" autocomplete="off">
       </div>
       <div class="field">
         <label>גוש</label>
-        <input id="iBlock" type="text" placeholder="מספר גוש">
+        <input id="iBlock" type="text" placeholder="מספר גוש" autocomplete="off">
       </div>
       <div class="field">
         <label>חלקה</label>
-        <input id="iParcel" type="text" placeholder="מספר חלקה">
+        <input id="iParcel" type="text" placeholder="מספר חלקה" autocomplete="off">
       </div>
     </div>
   </div>
@@ -274,18 +274,18 @@ input[type=file]{display:none}
     <div class="card-body one collapsed" id="bd-coords">
       <div class="field">
         <label>שם המקום</label>
-        <input id="placeName" type="text" placeholder='למשל: "ליד צומת עוקבי, שדות נגב"'>
+        <input id="placeName" type="text" placeholder='למשל: "ליד צומת עוקבי, שדות נגב"' autocomplete="off">
       </div>
       <div class="field">
         <label>קואורדינטות GPS (WGS84)</label>
         <div class="gps-row">
-          <input id="cGPS" type="text" placeholder="31.1234, 34.5678" style="direction:ltr;text-align:left">
+          <input id="cGPS" type="text" placeholder="31.1234, 34.5678" autocomplete="off" style="direction:ltr;text-align:left">
           <button class="btn-gps" onclick="getGPS()">📡 GPS</button>
         </div>
       </div>
       <div class="field">
         <label>קואורדינטות ITM</label>
-        <input id="cITM" type="text" placeholder="ימולא אוטומטית" style="direction:ltr;text-align:left" readonly>
+        <input id="cITM" type="text" placeholder="ימולא אוטומטית" autocomplete="off" style="direction:ltr;text-align:left" readonly>
       </div>
       <div class="ai-status" id="govmapStatus"></div>
       <div id="gpsMap"></div>
@@ -303,7 +303,7 @@ input[type=file]{display:none}
     <div class="card-body collapsed" id="bd-veh">
       <div class="field">
         <label>לוחית רישוי</label>
-        <input id="vPlate" type="text" placeholder="203-20-304" class="plate-input" oninput="this.value=this.value.toUpperCase()">
+        <input id="vPlate" type="text" placeholder="203-20-304" class="plate-input" autocomplete="off" oninput="this.value=this.value.toUpperCase()">
       </div>
       <div class="field">
         <label>סוג רכב</label>
@@ -320,15 +320,15 @@ input[type=file]{display:none}
       </div>
       <div class="field span2">
         <label>בעלים / מבצע</label>
-        <input id="vOwner" type="text" placeholder="שם ופרטים אם ידועים">
+        <input id="vOwner" type="text" placeholder="שם ופרטים אם ידועים" autocomplete="off">
       </div>
       <div class="field">
         <label>מס׳ ח.פ. / ת.ז.</label>
-        <input id="vId" type="text" placeholder="מס׳ זיהוי">
+        <input id="vId" type="text" placeholder="מס׳ זיהוי" autocomplete="off">
       </div>
       <div class="field">
         <label>כתובת</label>
-        <input id="vAddr" type="text" placeholder="כתובת">
+        <input id="vAddr" type="text" placeholder="כתובת" autocomplete="off">
       </div>
     </div>
   </div>
@@ -360,11 +360,11 @@ input[type=file]{display:none}
       </div>
       <div class="field" id="violManualField" style="display:none">
         <label>פירוט ידני</label>
-        <input id="vViolManual" type="text" placeholder="הזן פרטי עבירה ידנית">
+        <input id="vViolManual" type="text" placeholder="הזן פרטי עבירה ידנית" autocomplete="off">
       </div>
       <div class="field">
         <label>סוג פסולת</label>
-        <input id="vWaste" type="text" placeholder="סוג הפסולת שהושלכה">
+        <input id="vWaste" type="text" placeholder="סוג הפסולת שהושלכה" autocomplete="off">
       </div>
       <div class="field">
         <label><span class="req">* </span>מהות האירוע</label>
@@ -374,7 +374,7 @@ input[type=file]{display:none}
         </div>
         <div class="ai-status" id="aiStatus"></div>
         <div class="ai-fix-row">
-          <input class="ai-fix-input" id="aiFixText" placeholder='למשל: "הוסף שהרכב נסע לכיוון צפון"'>
+          <input class="ai-fix-input" id="aiFixText" placeholder='למשל: "הוסף שהרכב נסע לכיוון צפון"' autocomplete="off">
           <button class="btn-ai-fix" onclick="runAIFix()">תיקון ✦</button>
         </div>
       </div>
@@ -464,7 +464,7 @@ function renderPhotoGrid() {
       '<img class="pg-thumb" src="'+photos[id].src+'" onclick="viewPhoto('+id+')">' +
       '<span class="pg-num">'+(i+1)+'</span>' +
       '<button class="pg-del" onclick="delPg(event,'+id+')">✕</button>' +
-      '<input class="pg-cap" placeholder="כיתוב..." value="'+escHtml(photos[id].cap)+'" oninput="photos['+id+'].cap=this.value">' +
+      '<input class="pg-cap" placeholder="כיתוב..." autocomplete="off" value="'+escHtml(photos[id].cap)+'" oninput="photos['+id+'].cap=this.value">' +
       '</div>';
   }).join('');
   var b = $('badge-photos');
@@ -623,6 +623,7 @@ var gpsMap = null, gpsMarker = null, _gpsMapPending = null;
 window._gMapsReady = function() {
   if (_gpsMapPending) {
     _doShowMap(_gpsMapPending.lat, _gpsMapPending.lng);
+    _doReverseGeocode(_gpsMapPending.lat, _gpsMapPending.lng);
     _gpsMapPending = null;
   }
 };
@@ -631,6 +632,7 @@ function showGpsMap(lat, lng) {
   $('gpsMap').classList.add('show');
   if (typeof google !== 'undefined' && google.maps) {
     _doShowMap(lat, lng);
+    _doReverseGeocode(lat, lng);
   } else if (!document.getElementById('gmaps-script')) {
     _gpsMapPending = {lat: lat, lng: lng};
     var s = document.createElement('script');
@@ -652,7 +654,7 @@ function _doShowMap(lat, lng) {
   } else {
     gpsMap = new google.maps.Map(mapEl, {
       center: pos,
-      zoom: 17,
+      zoom: 15,
       mapTypeId: 'satellite',
       mapTypeControl: false,
       streetViewControl: false,
@@ -664,6 +666,16 @@ function _doShowMap(lat, lng) {
       title: 'מיקום האירוע'
     });
   }
+}
+
+function _doReverseGeocode(lat, lng) {
+  var geocoder = new google.maps.Geocoder();
+  geocoder.geocode({location: {lat: lat, lng: lng}}, function(results, status) {
+    if (status === 'OK' && results[0] && !$('iLoc').value) {
+      $('iLoc').value = results[0].formatted_address;
+      upProg();
+    }
+  });
 }
 
 function getGPS() {
