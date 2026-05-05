@@ -669,12 +669,31 @@ function _doShowMap(lat, lng) {
 }
 
 function _doReverseGeocode(lat, lng) {
+  if ($('iLoc').value) return;
   var geocoder = new google.maps.Geocoder();
-  geocoder.geocode({location: {lat: lat, lng: lng}}, function(results, status) {
-    if (status === 'OK' && results[0] && !$('iLoc').value) {
-      $('iLoc').value = results[0].formatted_address;
-      upProg();
+  geocoder.geocode({location: {lat: lat, lng: lng}, language: 'he'}, function(results, status) {
+    if (status !== 'OK' || !results || !results.length) return;
+    if ($('iLoc').value) return;
+    var addr = '';
+    for (var i = 0; i < results.length; i++) {
+      var comps = {};
+      results[i].address_components.forEach(function(c) {
+        c.types.forEach(function(t) { comps[t] = c.long_name; });
+      });
+      if (comps.route) {
+        addr = (comps.street_number ? comps.street_number + ' ' : '') + comps.route;
+        if (comps.locality || comps.administrative_area_level_2) {
+          addr += ', ' + (comps.locality || comps.administrative_area_level_2);
+        }
+        break;
+      }
     }
+    if (!addr) {
+      addr = results[0].formatted_address
+        .replace(/,?\s*ישראל$/, '').replace(/,?\s*Israel$/i, '').trim();
+    }
+    $('iLoc').value = addr;
+    upProg();
   });
 }
 
