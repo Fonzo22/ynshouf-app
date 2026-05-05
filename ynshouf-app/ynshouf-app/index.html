@@ -886,30 +886,35 @@ async function genReport() {
 
     // תיקון RTL בכל קבצי ה-XML
     var zipObj = doc.getZip();
-    var xmlFiles = ['word/document.xml', 'word/styles.xml', 'word/header1.xml', 'word/footer1.xml'];
-    xmlFiles.forEach(function(fname) {
+    var rtlFiles = ['word/document.xml', 'word/styles.xml', 'word/header1.xml', 'word/footer1.xml'];
+    rtlFiles.forEach(function(fname) {
       try {
-        var xmlStr = zipObj.file(fname).asText();
-        // 1. jc left לימין
-        xmlStr = xmlStr.replace(/<w:jc w:val="left"\/>/g, '<w:jc w:val="right"/>');
-        // 2. הוסף bidi לכל pPr
-        xmlStr = xmlStr.replace(/<w:pPr>/g, '<w:pPr><w:bidi/>');
-        xmlStr = xmlStr.replace(/<w:bidi\/><w:bidi\/>/g, '<w:bidi/>');
-        // 3. הוסף rtl לכל rPr
-        xmlStr = xmlStr.replace(/<w:rPr>/g, '<w:rPr><w:rtl/>');
-        xmlStr = xmlStr.replace(/<w:rtl\/><w:rtl\/>/g, '<w:rtl/>');
-        // 4. הוסף lang עברית
-        xmlStr = xmlStr.replace(/<w:rtl\/>/g, '<w:rtl/><w:lang w:bidi="he-IL"/>');
-        xmlStr = xmlStr.replace(/(<w:lang w:bidi="he-IL"\/>){2,}/g, '<w:lang w:bidi="he-IL"/>');
-        zipObj.file(fname, xmlStr);
+        var f = zipObj.file(fname);
+        if (!f) return;
+        var s = f.asText();
+        // יישור: שמאל → ימין
+        s = s.replace(/<w:jc w:val="left"\/>/g, '<w:jc w:val="right"/>');
+        // פסקה bidi — תגיות self-closing, ותגיות עם תכונות (w:rsidR וכו׳)
+        s = s.replace(/<w:pPr\/>/g, '<w:pPr><w:bidi/></w:pPr>');
+        s = s.replace(/(<w:pPr(?:\s[^>]*)?>)/g, '$1<w:bidi/>');
+        s = s.replace(/(<w:bidi\/>){2,}/g, '<w:bidi/>');
+        // ריצה rtl + שפה עברית — כולל תגיות עם תכונות
+        s = s.replace(/<w:rPr\/>/g, '<w:rPr><w:rtl/><w:lang w:bidi="he-IL"/></w:rPr>');
+        s = s.replace(/(<w:rPr(?:\s[^>]*)?>)/g, '$1<w:rtl/><w:lang w:bidi="he-IL"/>');
+        s = s.replace(/(<w:rtl\/>){2,}/g, '<w:rtl/>');
+        s = s.replace(/(<w:lang w:bidi="he-IL"\/>){2,}/g, '<w:lang w:bidi="he-IL"/>');
+        zipObj.file(fname, s);
       } catch(e) {}
     });
-    // תיקון settings.xml
+    // כיוון RTL ברמת המסמך
     try {
-      var settings = zipObj.file('word/settings.xml').asText();
-      if (settings.indexOf('<w:bidi/>') === -1) {
-        settings = settings.replace('<w:displayBackgroundShape/>', '<w:displayBackgroundShape/><w:bidi/>');
-        zipObj.file('word/settings.xml', settings);
+      var settingsF = zipObj.file('word/settings.xml');
+      if (settingsF) {
+        var settingsXml = settingsF.asText();
+        if (settingsXml.indexOf('<w:bidi/>') === -1) {
+          settingsXml = settingsXml.replace(/(<w:settings[^>]*>)/, '$1<w:bidi/>');
+          zipObj.file('word/settings.xml', settingsXml);
+        }
       }
     } catch(e) {}
 
