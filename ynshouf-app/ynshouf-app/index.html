@@ -83,6 +83,10 @@ body{font-family:var(--font);background:var(--fog);color:var(--ink);min-height:1
 .btn-gps{background:var(--mist);color:var(--forest);border:1.5px solid var(--line);border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font);transition:all .15s;display:flex;align-items:center;gap:5px;height:42px}
 .btn-gps:hover{background:var(--mint);border-color:var(--sage)}
 
+/* MAP */
+#gpsMap{display:none;width:100%;height:250px;border-radius:var(--r);overflow:hidden;margin-top:4px;border:1.5px solid var(--line)}
+#gpsMap.show{display:block}
+
 /* PLATE */
 .plate-input{direction:ltr!important;text-align:center!important;font-size:18px!important;font-weight:800!important;letter-spacing:3px!important}
 
@@ -284,6 +288,7 @@ input[type=file]{display:none}
         <input id="cITM" type="text" placeholder="ימולא אוטומטית" style="direction:ltr;text-align:left" readonly>
       </div>
       <div class="ai-status" id="govmapStatus"></div>
+      <div id="gpsMap"></div>
     </div>
   </div>
 
@@ -613,6 +618,54 @@ var WORKER = 'https://ynshouf-proxy.fonzoahrak.workers.dev';
 // הגדרת מערכת הקואורדינטות הישראלית ITM
 proj4.defs('EPSG:2039', '+proj=tmerc +lat_0=31.7343936111111 +lon_0=35.2045169444444 +k=1.0000067 +x_0=219529.584 +y_0=626907.39 +ellps=GRS80 +towgs84=-48,55,52,0,0,0,0 +units=m +no_defs');
 
+var gpsMap = null, gpsMarker = null, _gpsMapPending = null;
+
+window._gMapsReady = function() {
+  if (_gpsMapPending) {
+    _doShowMap(_gpsMapPending.lat, _gpsMapPending.lng);
+    _gpsMapPending = null;
+  }
+};
+
+function showGpsMap(lat, lng) {
+  $('gpsMap').classList.add('show');
+  if (typeof google !== 'undefined' && google.maps) {
+    _doShowMap(lat, lng);
+  } else if (!document.getElementById('gmaps-script')) {
+    _gpsMapPending = {lat: lat, lng: lng};
+    var s = document.createElement('script');
+    s.id = 'gmaps-script';
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyBqllNgJtF_5DaQrXSlkdE2MxlByacf77o&callback=_gMapsReady';
+    s.async = true;
+    document.head.appendChild(s);
+  } else {
+    _gpsMapPending = {lat: lat, lng: lng};
+  }
+}
+
+function _doShowMap(lat, lng) {
+  var mapEl = $('gpsMap');
+  var pos = {lat: lat, lng: lng};
+  if (gpsMap) {
+    gpsMap.setCenter(pos);
+    gpsMarker.setPosition(pos);
+  } else {
+    gpsMap = new google.maps.Map(mapEl, {
+      center: pos,
+      zoom: 17,
+      mapTypeId: 'satellite',
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false
+    });
+    gpsMarker = new google.maps.Marker({
+      position: pos,
+      map: gpsMap,
+      title: 'מיקום האירוע'
+    });
+  }
+}
+
 function getGPS() {
   if (!navigator.geolocation) { toast('מכשיר זה אינו תומך ב-GPS', 'err'); return; }
   toast('מאתר מיקום...', 'warn');
@@ -622,6 +675,7 @@ function getGPS() {
       var lat = pos.coords.latitude;
       var lng = pos.coords.longitude;
       $('cGPS').value = lat.toFixed(6) + ', ' + lng.toFixed(6);
+      showGpsMap(lat, lng);
       // המרה ל-ITM
       try {
         var itm = proj4('EPSG:4326', 'EPSG:2039', [lng, lat]);
