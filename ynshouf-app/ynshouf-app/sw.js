@@ -1,5 +1,5 @@
-const CACHE = 'ynshouf-v3';
-const ASSETS = [
+const CACHE = 'ynshouf-v4';
+const CORE_ASSETS = [
   './',
   './index.html',
   'https://unpkg.com/pizzip@3.1.7/dist/pizzip.min.js',
@@ -8,7 +8,10 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(async c => {
+      await c.addAll(CORE_ASSETS);
+      try { await c.add('./YNSHOUF_Template.docx'); } catch (_) {}
+    }).then(() => self.skipWaiting())
   );
 });
 
