@@ -723,10 +723,13 @@ function getGPS() {
               $('iBlock').value = d.block;
               $('iParcel').value = d.parcel || '';
               if (d.jurisdiction) $('iJuris').value = d.jurisdiction;
-              status.textContent = 'גוש ' + d.block + ', חלקה ' + (d.parcel || '—') + ' נטענו ✓';
+              status.innerHTML = 'גוש ' + d.block + ', חלקה ' + (d.parcel || '—') + ' נטענו ✓';
               toast('גוש וחלקה נטענו ✓');
             } else {
-              status.textContent = 'לא נמצאו נתוני גוש/חלקה';
+              var link = d.govmapUrl
+                ? '<a href="' + d.govmapUrl + '" target="_blank" rel="noopener" style="color:var(--sage);font-weight:700;">פתח ב-Govmap לאיתור גוש/חלקה ↗</a>'
+                : 'לא נמצאו נתוני גוש/חלקה';
+              status.innerHTML = link;
             }
           })
           .catch(function() {
