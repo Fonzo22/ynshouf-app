@@ -1,4 +1,4 @@
-const CACHE = 'ynshouf-v4';
+const CACHE = 'ynshouf-v5';
 const CORE_ASSETS = [
   './',
   './index.html',

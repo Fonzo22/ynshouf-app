@@ -623,7 +623,6 @@ var gpsMap = null, gpsMarker = null, _gpsMapPending = null;
 window._gMapsReady = function() {
   if (_gpsMapPending) {
     _doShowMap(_gpsMapPending.lat, _gpsMapPending.lng);
-    _doReverseGeocode(_gpsMapPending.lat, _gpsMapPending.lng);
     _gpsMapPending = null;
   }
 };
@@ -632,7 +631,6 @@ function showGpsMap(lat, lng) {
   $('gpsMap').classList.add('show');
   if (typeof google !== 'undefined' && google.maps) {
     _doShowMap(lat, lng);
-    _doReverseGeocode(lat, lng);
   } else if (!document.getElementById('gmaps-script')) {
     _gpsMapPending = {lat: lat, lng: lng};
     var s = document.createElement('script');
@@ -670,31 +668,24 @@ function _doShowMap(lat, lng) {
 
 function _doReverseGeocode(lat, lng) {
   if ($('iLoc').value) return;
-  var geocoder = new google.maps.Geocoder();
-  geocoder.geocode({location: {lat: lat, lng: lng}, language: 'he'}, function(results, status) {
-    if (status !== 'OK' || !results || !results.length) return;
-    if ($('iLoc').value) return;
-    var addr = '';
-    for (var i = 0; i < results.length; i++) {
-      var comps = {};
-      results[i].address_components.forEach(function(c) {
-        c.types.forEach(function(t) { comps[t] = c.long_name; });
-      });
-      if (comps.route) {
-        addr = (comps.street_number ? comps.street_number + ' ' : '') + comps.route;
-        if (comps.locality || comps.administrative_area_level_2) {
-          addr += ', ' + (comps.locality || comps.administrative_area_level_2);
-        }
-        break;
+  var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&accept-language=he&zoom=18';
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if ($('iLoc').value || !data || !data.address) return;
+      var a = data.address;
+      var street = a.road || a.pedestrian || a.path || '';
+      if (street && a.house_number) street = a.house_number + ' ' + street;
+      var city = a.city || a.town || a.village || a.municipality || a.county || '';
+      var parts = [street, city].filter(Boolean);
+      var result = parts.join(', ');
+      if (!result && data.display_name) {
+        result = data.display_name.split(',').slice(0, 2).map(function(s) { return s.trim(); }).join(', ')
+          .replace(/,?\s*ישראל$/, '').replace(/,?\s*Israel$/i, '').trim();
       }
-    }
-    if (!addr) {
-      addr = results[0].formatted_address
-        .replace(/,?\s*ישראל$/, '').replace(/,?\s*Israel$/i, '').trim();
-    }
-    $('iLoc').value = addr;
-    upProg();
-  });
+      if (result) { $('iLoc').value = result; upProg(); }
+    })
+    .catch(function() {});
 }
 
 function getGPS() {
@@ -707,6 +698,7 @@ function getGPS() {
       var lng = pos.coords.longitude;
       $('cGPS').value = lat.toFixed(6) + ', ' + lng.toFixed(6);
       showGpsMap(lat, lng);
+      _doReverseGeocode(lat, lng);
       // המרה ל-ITM
       try {
         var itm = proj4('EPSG:4326', 'EPSG:2039', [lng, lat]);
@@ -715,25 +707,61 @@ function getGPS() {
         $('cITM').value = x + ', ' + y;
         toast('GPS נטען ✓ — מאתר גוש/חלקה...');
         status.textContent = 'מאתר גוש וחלקה...';
-        // Govmap
-        fetch(WORKER + '/govmap?x=' + x + '&y=' + y)
-          .then(function(r) { return r.json(); })
+        var govmapUrl = 'https://www.govmap.gov.il/?c=' + x + ',' + y + '&zoom=7&lang=0';
+
+        function applyGovmapResult(d) {
+          if (d && d.block) {
+            $('iBlock').value = d.block;
+            $('iParcel').value = d.parcel || '';
+            if (d.jurisdiction) $('iJuris').value = d.jurisdiction;
+            status.innerHTML = 'גוש ' + d.block + ', חלקה ' + (d.parcel || '—') + ' ✓';
+            toast('גוש וחלקה נטענו ✓');
+            return true;
+          }
+          return false;
+        }
+
+        function showGovmapFallback() {
+          status.innerHTML = '<a href="' + govmapUrl + '" target="_blank" rel="noopener" style="color:var(--sage);font-weight:700;">פתח ב-Govmap לאיתור גוש/חלקה ↗</a>';
+        }
+
+        function parseGetFeatureInfo(d) {
+          if (!d) return null;
+          if (Array.isArray(d.data)) {
+            for (var li = 0; li < d.data.length; li++) {
+              var rows = d.data[li].Rows || d.data[li].rows || [];
+              if (rows.length) {
+                var attrs = rows[0].Attributes || rows[0].attributes || rows[0];
+                var bl = attrs.GUSH_NUM || attrs.gush_num || attrs.GUSH;
+                var pa = attrs.HELKA_NUM || attrs.helka_num || attrs.HELKA;
+                var ju = attrs.SHEM_YISHUV || attrs.shem_yishuv || '';
+                if (bl) return { block: String(bl), parcel: pa ? String(pa) : '', jurisdiction: ju };
+              }
+            }
+          }
+          return null;
+        }
+
+        // ניסיון ראשון: קריאה ישירה מהדפדפן (עובד מ-IP ביתי/סלולרי)
+        var directUrl = 'https://api.govmap.gov.il/Query/GetFeatureInfo?RequestType=json&LayerNames=PARCEL&X=' + x + '&Y=' + y + '&Buffer=50&SRID=2039';
+        fetch(directUrl)
+          .then(function(r) { return r.ok ? r.json() : null; })
           .then(function(d) {
-            if (d.block) {
-              $('iBlock').value = d.block;
-              $('iParcel').value = d.parcel || '';
-              if (d.jurisdiction) $('iJuris').value = d.jurisdiction;
-              status.innerHTML = 'גוש ' + d.block + ', חלקה ' + (d.parcel || '—') + ' נטענו ✓';
-              toast('גוש וחלקה נטענו ✓');
-            } else {
-              var link = d.govmapUrl
-                ? '<a href="' + d.govmapUrl + '" target="_blank" rel="noopener" style="color:var(--sage);font-weight:700;">פתח ב-Govmap לאיתור גוש/חלקה ↗</a>'
-                : 'לא נמצאו נתוני גוש/חלקה';
-              status.innerHTML = link;
+            var result = parseGetFeatureInfo(d);
+            if (!applyGovmapResult(result)) {
+              // ניסיון שני: דרך ה-Worker (fallback)
+              return fetch(WORKER + '/govmap?x=' + x + '&y=' + y)
+                .then(function(r) { return r.json(); })
+                .then(function(wd) { if (!applyGovmapResult(wd)) showGovmapFallback(); })
+                .catch(showGovmapFallback);
             }
           })
           .catch(function() {
-            status.textContent = 'Govmap לא זמין — קואורדינטות נטענו';
+            // CORS חסם — נסה דרך ה-Worker
+            fetch(WORKER + '/govmap?x=' + x + '&y=' + y)
+              .then(function(r) { return r.json(); })
+              .then(function(wd) { if (!applyGovmapResult(wd)) showGovmapFallback(); })
+              .catch(showGovmapFallback);
           });
       } catch(e) {
         $('cITM').value = 'שגיאת המרה';
@@ -1005,6 +1033,91 @@ async function genReport() {
         }
       }
     } catch(e) {}
+
+    // ── הכנסת תמונות לתוך ה-docx ──────────────────────────────────────────────
+    (function() {
+      var IMG_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image';
+      var A_NS   = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+      var PIC_NS = 'http://schemas.openxmlformats.org/drawingml/2006/picture';
+
+      var docFile  = zipObj.file('word/document.xml');
+      var relsFile = zipObj.file('word/_rels/document.xml.rels');
+      if (!docFile || !relsFile) return;
+
+      var docXml  = docFile.asText();
+      var relsXml = relsFile.asText();
+
+      // הוספת namespaces של DrawingML לאלמנט הראשי (נדרש לתמונות)
+      if (docXml.indexOf('xmlns:a=') === -1) {
+        docXml = docXml.replace('<w:document ',
+          '<w:document xmlns:a="' + A_NS + '" xmlns:pic="' + PIC_NS + '" ');
+      }
+
+      var sortedIds = Object.keys(photos).map(Number).sort(function(a,b){return a-b;});
+      sortedIds.forEach(function(photoId, i) {
+        var n = i + 1;
+        if (n > 10) return;
+
+        var src = photos[photoId].src;
+        var m = src.match(/^data:image\/(\w+);base64,(.+)$/);
+        if (!m) return;
+
+        var ext      = m[1].toLowerCase() === 'jpeg' ? 'jpg' : m[1].toLowerCase();
+        var b64      = m[2];
+        var mediaPath = 'word/media/photo_' + n + '.' + ext;
+        var rId      = 'rIdPhoto' + n;
+        var docPrId  = 100 + n;
+
+        // שמירת התמונה בתוך ה-ZIP
+        zipObj.file(mediaPath, b64, {base64: true});
+
+        // הוספת relationship
+        relsXml = relsXml.replace('</Relationships>',
+          '<Relationship Id="' + rId + '" Type="' + IMG_REL + '" Target="../media/photo_' + n + '.' + ext + '"/>' +
+          '</Relationships>');
+
+        // XML של תמונה מוטמעת (4:3, ~15×11 ס"מ)
+        var cx = 5486400, cy = 4114800;
+        var imgXml =
+          '<w:p><w:pPr><w:bidi/><w:jc w:val="center"/></w:pPr>' +
+          '<w:r><w:rPr><w:noProof/></w:rPr>' +
+          '<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">' +
+          '<wp:extent cx="' + cx + '" cy="' + cy + '"/>' +
+          '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
+          '<wp:docPr id="' + docPrId + '" name="Photo' + n + '"/>' +
+          '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
+          '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+          '<pic:pic><pic:nvPicPr>' +
+          '<pic:cNvPr id="' + docPrId + '" name="Photo' + n + '"/>' +
+          '<pic:cNvPicPr/></pic:nvPicPr>' +
+          '<pic:blipFill><a:blip r:embed="' + rId + '"/>' +
+          '<a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+          '<pic:spPr><a:xfrm><a:off x="0" y="0"/>' +
+          '<a:ext cx="' + cx + '" cy="' + cy + '"/></a:xfrm>' +
+          '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+          '</pic:pic></a:graphicData></a:graphic>' +
+          '</wp:inline></w:drawing></w:r></w:p>';
+
+        // מציאת פסקת ה-placeholder והחלפתה
+        var paddedN = String(n).padStart(2, '0');
+        var ph = '[ תמונה מספר ' + paddedN + ' ]';
+        var phIdx = docXml.indexOf(ph);
+        if (phIdx < 0) return;
+
+        var pStart = Math.max(
+          docXml.lastIndexOf('<w:p>', phIdx),
+          docXml.lastIndexOf('<w:p ', phIdx)
+        );
+        var pEnd = docXml.indexOf('</w:p>', phIdx) + 6;
+        if (pStart < 0 || pEnd < 6) return;
+
+        docXml = docXml.substring(0, pStart) + imgXml + docXml.substring(pEnd);
+      });
+
+      zipObj.file('word/document.xml', docXml);
+      zipObj.file('word/_rels/document.xml.rels', relsXml);
+    })();
+    // ──────────────────────────────────────────────────────────────────────────
 
     var blob = doc.getZip().generate({
       type: 'blob',

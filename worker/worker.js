@@ -160,8 +160,9 @@ async function handleGovmap(url) {
   const coords = itmToCoords(itmX, itmY);
   const debugAttempts = [];
 
-  // Primary: entitiesByPoint — layer 16, WGS84 [lon, lat], minimal headers (no Origin/Referer)
-  // Matches nadlan-mcp GovmapClient.get_gush_helka() implementation exactly.
+  const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+  // Primary: entitiesByPoint — layer 16, WGS84 [lon, lat]
   try {
     const ep = 'https://www.govmap.gov.il/api/layers-catalog/entitiesByPoint';
     const body = JSON.stringify({
@@ -171,7 +172,12 @@ async function handleGovmap(url) {
     });
     const resp = await fetch(ep, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Origin': 'https://www.govmap.gov.il',
+        'Referer': 'https://www.govmap.gov.il/',
+        'User-Agent': BROWSER_UA,
+      },
       body,
       cf: { timeout: 10000 },
     });
@@ -187,11 +193,14 @@ async function handleGovmap(url) {
     if (debug) debugAttempts.push({ url: 'entitiesByPoint', error: String(e) });
   }
 
-  // Fallback: legacy api.govmap.gov.il GetFeatureInfo (works from Israeli Cloudflare PoPs)
+  // Fallback: legacy api.govmap.gov.il GetFeatureInfo
   try {
     const ep = `https://api.govmap.gov.il/Query/GetFeatureInfo?RequestType=json&LayerNames=PARCEL&X=${itmX}&Y=${itmY}&Buffer=50&SRID=2039`;
     const resp = await fetch(ep, {
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Referer': 'https://www.govmap.gov.il/',
+        'User-Agent': BROWSER_UA,
+      },
       cf: { timeout: 8000 },
     });
     const text = await resp.text();
