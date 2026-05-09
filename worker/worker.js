@@ -292,17 +292,24 @@ function parseGovmapResponse(data) {
 
 async function handleAI(req) {
   const body = await req.json();
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  const prompt = body.prompt || '';
+  if (!prompt) return json({ error: 'missing prompt' }, 400);
+
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'x-api-key': ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
+      'Authorization': `Bearer ${GROQ_API_KEY}`,
       'content-type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 1024,
+      messages: [{ role: 'user', content: prompt }],
+    }),
   });
   const data = await resp.json();
-  return json(data, resp.status);
+  const text = data.choices?.[0]?.message?.content || '';
+  return json({ text }, resp.status);
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────

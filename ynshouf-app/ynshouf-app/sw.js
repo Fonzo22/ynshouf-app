@@ -1,16 +1,20 @@
-const CACHE = 'ynshouf-v5';
+const CACHE = 'ynshouf-v8';
 const CORE_ASSETS = [
-  './',
-  './index.html',
-  'https://unpkg.com/pizzip@3.1.7/dist/pizzip.min.js',
-  'https://unpkg.com/docxtemplater@3.37.12/build/docxtemplater.js'
+  './', './index.html', './docx.min.js',
+  './css/style.css',
+  './js/config.js', './js/photos.js', './js/signature.js',
+  './js/ui.js', './js/gps.js', './js/ai.js',
+  './js/storage.js', './js/report.js',
 ];
+const CDN_ASSETS = [];
 
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(async c => {
       await c.addAll(CORE_ASSETS);
-      try { await c.add('./YNSHOUF_Template.docx'); } catch (_) {}
+      for (const url of CDN_ASSETS) {
+        try { await c.add(url); } catch (_) {}
+      }
     }).then(() => self.skipWaiting())
   );
 });
