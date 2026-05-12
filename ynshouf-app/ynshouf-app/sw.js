@@ -1,10 +1,10 @@
-const CACHE = 'ynshouf-v9';
+const CACHE = 'ynshouf-v10';
 const CORE_ASSETS = [
   './', './index.html', './docx.min.js',
   './css/style.css', './css/auth.css',
   './js/config.js', './js/photos.js', './js/signature.js',
   './js/ui.js', './js/gps.js', './js/ai.js',
-  './js/storage.js', './js/report.js', './js/auth.js',
+  './js/storage.js', './js/report.js', './js/drive.js', './js/auth.js',
   './YNSHOUF_Template.docx',
 ];
 const CDN_ASSETS = [];
@@ -30,6 +30,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.url.includes('api.anthropic.com')) return;
+  if (e.request.url.includes('googleapis.com')) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       const clone = res.clone();

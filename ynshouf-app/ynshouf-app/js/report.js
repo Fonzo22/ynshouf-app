@@ -238,7 +238,18 @@ async function genReport() {
     a.click();
 
     saveDraft();
-    toast('הדוח הורד ✓');
+    toast('הדוח הורד ✓ — מעלה לדרייב...');
+
+    // filename: [incident_type]_[dd.mm.yyyy].docx
+    var dRaw = new Date($('iDate').value);
+    var driveDate = String(dRaw.getDate()).padStart(2,'0') + '.' + String(dRaw.getMonth()+1).padStart(2,'0') + '.' + dRaw.getFullYear();
+    var driveFilename = ($('iType').value || 'דוח').replace(/[\s/\\:*?"<>|]+/g, '_') + '_' + driveDate + '.docx';
+    saveToDrive(blob, driveFilename, $('inspName').value).then(function() {
+      toast('הדוח הורד ✓ — הועלה לגוגל דרייב ✓');
+    }).catch(function(err) {
+      console.warn('Drive upload failed:', err);
+      toast('הדוח הורד ✓ — ההעלאה לדרייב נכשלה', 'err');
+    });
 
   } catch(err) {
     toast('שגיאה: ' + err.message, 'err');
