@@ -1,10 +1,11 @@
-const CACHE = 'ynshouf-v8';
+const CACHE = 'ynshouf-v9';
 const CORE_ASSETS = [
   './', './index.html', './docx.min.js',
-  './css/style.css',
+  './css/style.css', './css/auth.css',
   './js/config.js', './js/photos.js', './js/signature.js',
   './js/ui.js', './js/gps.js', './js/ai.js',
-  './js/storage.js', './js/report.js',
+  './js/storage.js', './js/report.js', './js/auth.js',
+  './YNSHOUF_Template.docx',
 ];
 const CDN_ASSETS = [];
 

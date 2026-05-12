@@ -5,14 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#0d1f17">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="cross-origin-opener-policy" content="same-origin-allow-popups">
 <title>ינשו"פ — דוח אירוע</title>
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="./docx.min.js"></script>
 <script src="https://unpkg.com/proj4@2.9.0/dist/proj4.js"></script>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
+<div id="authScreen">
+  <div class="auth-box">
+    <img src="icon-512.png" alt="ינשוף" class="auth-logo">
+    <div class="auth-title">ינשו"פ</div>
+    <div class="auth-sub">יחידת אכיפת טבע וסביבה</div>
+    <div class="auth-divider"></div>
+    <div id="g_id_signin"></div>
+    <div id="authError" class="auth-error"></div>
+  </div>
+</div>
 <header class="hdr">
   <div class="hdr-inner">
     <div class="hdr-brand">
@@ -28,6 +40,7 @@
       <button class="nav-btn active" id="btnPageForm" onclick="showPage('form')">דוח חדש</button>
       <button class="nav-btn" id="btnPageHist" onclick="showPage('hist')">היסטוריה</button>
       <button class="nav-btn danger" onclick="clearForm()">נקה</button>
+      <button class="nav-btn" id="btnLogout" onclick="signOut()">יציאה</button>
     </div>
   </div>
   <div class="hdr-prog"><div class="hdr-prog-fill" id="progFill"></div></div>
@@ -278,6 +291,7 @@
 <script src="js/ai.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/report.js"></script>
+<script src="js/auth.js"></script>
 <script>
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
 </script>

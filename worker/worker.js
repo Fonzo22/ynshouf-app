@@ -182,6 +182,7 @@ async function handleGovmap(url) {
       cf: { timeout: 10000 },
     });
     const text = await resp.text();
+    console.log('[govmap] entitiesByPoint status:', resp.status, 'body:', text.slice(0, 500));
     if (debug) debugAttempts.push({ url: ep, status: resp.status, body: text.slice(0, 500) });
 
     if (resp.ok && text && !text.trimStart().startsWith('<')) {
@@ -190,6 +191,7 @@ async function handleGovmap(url) {
       if (result) return debug ? json({ ...result, debug: { coords, attempts: debugAttempts } }) : json(result);
     }
   } catch (e) {
+    console.log('[govmap] entitiesByPoint error:', String(e));
     if (debug) debugAttempts.push({ url: 'entitiesByPoint', error: String(e) });
   }
 
@@ -204,6 +206,7 @@ async function handleGovmap(url) {
       cf: { timeout: 8000 },
     });
     const text = await resp.text();
+    console.log('[govmap] GetFeatureInfo status:', resp.status, 'body:', text.slice(0, 500));
     if (debug) debugAttempts.push({ url: ep, status: resp.status, body: text.slice(0, 300) });
 
     if (resp.ok && text && !text.trimStart().startsWith('<')) {
@@ -214,6 +217,7 @@ async function handleGovmap(url) {
       }
     }
   } catch (e) {
+    console.log('[govmap] GetFeatureInfo error:', String(e));
     if (debug) debugAttempts.push({ url: 'legacy-api', error: String(e) });
   }
 
