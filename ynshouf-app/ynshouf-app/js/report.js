@@ -188,7 +188,7 @@ async function genReport() {
             // build <w:drawing> paragraph — xmlns:r already on root <w:ftr>, add a/pic inline
             // 1800000 x 600000 EMU ≈ 2" x 0.65", left-aligned
             var drawXml = '<w:p>'
-              + '<w:pPr><w:jc w:val="left"/></w:pPr>'
+              + '<w:pPr><w:bidi w:val="0"/><w:jc w:val="left"/><w:ind w:left="0" w:right="0"/></w:pPr>'
               + '<w:r><w:drawing>'
               + '<wp:inline distT="0" distB="0" distL="0" distR="0">'
               + '<wp:extent cx="1800000" cy="600000"/>'
