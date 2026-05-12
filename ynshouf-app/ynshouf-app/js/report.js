@@ -47,7 +47,7 @@ async function genReport() {
 
     // incident_description — multi-line, 12pt
     var descParas = ($('iDesc').value || '').split('\n').map(function(line) {
-      return rtlP(line || ' ', { size: 24, color: '000000' });
+      return rtlP(line || ' ', { size: 24, color: '000000', spacing: { line: 360, lineRule: 'auto', after: 0 } });
     });
 
     // photos
