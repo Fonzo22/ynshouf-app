@@ -120,8 +120,8 @@ async function genReport() {
     var patches = {
       report_id:            { type: D.PatchType.PARAGRAPH, children: [tr(reportId,                    TBL)] },
       inspector_name:       { type: D.PatchType.PARAGRAPH, children: [tr($('inspName').value,         TBL)] },
-      inspector_num:        { type: D.PatchType.PARAGRAPH, children: [tr(dateHe,                      TBL)] },
-      date:                 { type: D.PatchType.PARAGRAPH, children: [tr($('inspNum').value,          TBL)] },
+      inspector_num:        { type: D.PatchType.PARAGRAPH, children: [tr($('inspNum').value,          TBL)] },
+      date:                 { type: D.PatchType.PARAGRAPH, children: [tr(dateHe,                      TBL)] },
       time:                 { type: D.PatchType.PARAGRAPH, children: [tr($('iTime').value,            TBL)] },
       report_type:          { type: D.PatchType.PARAGRAPH, children: [tr($('iType').value, { size: 24, color: '000000', bold: false })] },
       report_sub:           { type: D.PatchType.PARAGRAPH, children: [tr($('iSub').value,  { bold: false, size: 28, color: '2E74B5' })] },
