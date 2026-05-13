@@ -123,7 +123,7 @@ async function genReport() {
       inspector_num:        { type: D.PatchType.PARAGRAPH, children: [tr($('inspNum').value,          TBL)] },
       date:                 { type: D.PatchType.PARAGRAPH, children: [tr(dateHe,                      TBL)] },
       time:                 { type: D.PatchType.PARAGRAPH, children: [tr($('iTime').value,            TBL)] },
-      report_type:          { type: D.PatchType.PARAGRAPH, children: [tr($('iType').value, { bold: true, size: 36, color: '1B3A6B' })] },
+      report_type:          { type: D.PatchType.PARAGRAPH, children: [tr($('iType').value,            TBL)] },
       report_sub:           { type: D.PatchType.PARAGRAPH, children: [tr($('iSub').value,  { bold: false, size: 28, color: '2E74B5' })] },
       location:             { type: D.PatchType.PARAGRAPH, children: [tr($('iLoc').value,             TBL)] },
       place_name:           { type: D.PatchType.PARAGRAPH, children: [tr($('placeName').value,        TBL)] },
