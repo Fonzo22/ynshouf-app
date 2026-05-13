@@ -1,6 +1,11 @@
 // Cloudflare Worker — ynshouf-proxy
 // Handles:  /govmap?x=<ITM_X>&y=<ITM_Y>   -> block/parcel JSON
 //           /ai  (POST)                     -> Claude API proxy
+//           /staticmap?lat=&lng=           -> Google Static Maps proxy
+//
+// Required env vars (Cloudflare dashboard → Settings → Variables):
+//   GROQ_API_KEY      — Groq API key
+//   GOOGLE_MAPS_KEY   — Google Maps API key (restricted to server-side use)
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -12,9 +17,19 @@ addEventListener('fetch', event => {
   event.respondWith(handle(event.request));
 });
 
+const ALLOWED_ORIGINS = [
+  'https://ynshouf.pages.dev',
+  'https://ynshouf-app.pages.dev',
+];
+
 async function handle(req) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS });
+  }
+
+  const origin = req.headers.get('Origin') || '';
+  if (origin && !ALLOWED_ORIGINS.some(o => origin === o || origin.endsWith('.ynshouf.pages.dev'))) {
+    return new Response('Forbidden', { status: 403 });
   }
 
   const url = new URL(req.url);
@@ -25,6 +40,10 @@ async function handle(req) {
 
   if (url.pathname === '/ai' && req.method === 'POST') {
     return handleAI(req);
+  }
+
+  if (url.pathname === '/staticmap') {
+    return handleStaticMap(url);
   }
 
   return json({ error: 'not found' }, 404);
@@ -290,6 +309,32 @@ function parseGovmapResponse(data) {
   }
 
   return {};
+}
+
+// ── Static Maps proxy (keeps API key server-side) ───────────────────────────
+
+async function handleStaticMap(url) {
+  const lat = url.searchParams.get('lat');
+  const lng = url.searchParams.get('lng');
+  if (!lat || !lng) return new Response('missing lat/lng', { status: 400, headers: CORS });
+
+  const mapUrl = 'https://maps.googleapis.com/maps/api/staticmap'
+    + '?center=' + lat + ',' + lng
+    + '&zoom=15&size=450x338&maptype=satellite'
+    + '&markers=color:red%7C' + lat + ',' + lng
+    + '&key=' + GOOGLE_MAPS_KEY;
+
+  try {
+    const resp = await fetch(mapUrl);
+    if (!resp.ok) return new Response('', { status: resp.status, headers: CORS });
+    const img = await resp.arrayBuffer();
+    return new Response(img, {
+      status: 200,
+      headers: { ...CORS, 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' },
+    });
+  } catch (e) {
+    return new Response('map fetch failed', { status: 502, headers: CORS });
+  }
 }
 
 // ── AI (Claude) ──────────────────────────────────────────────────────────────

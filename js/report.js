@@ -6,6 +6,7 @@ async function genReport() {
   if (!$('iDate').value)    errs.push('תאריך');
   if (!$('iType').value)    errs.push('סוג אירוע');
   if (!$('iDesc').value)    errs.push('מהות האירוע');
+  if ($('vViol').value === 'אחר' && !$('vViolManual').value.trim()) errs.push('פרטי עבירה ידנית');
   if (errs.length) { toast('חסר: ' + errs.join(', '), 'err'); return; }
 
   toast('מייצר דוח...');
@@ -90,11 +91,7 @@ async function genReport() {
     if (gpsStr && gpsStr.indexOf(',') > -1) {
       var gpsParts = gpsStr.split(',');
       var mlat = gpsParts[0].trim(), mlng = gpsParts[1].trim();
-      var mapUrl = 'https://maps.googleapis.com/maps/api/staticmap'
-        + '?center=' + mlat + ',' + mlng
-        + '&zoom=15&size=450x338&maptype=satellite'
-        + '&markers=color:red%7C' + mlat + ',' + mlng
-        + '&key=AIzaSyBqllNgJtF_5DaQrXSlkdE2MxlByacf77o';
+      var mapUrl = WORKER + '/staticmap?lat=' + mlat + '&lng=' + mlng;
       try {
         var mapResp = await fetch(mapUrl);
         if (mapResp.ok) {

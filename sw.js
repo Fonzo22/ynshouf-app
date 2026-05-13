@@ -1,8 +1,8 @@
-const CACHE = 'ynshouf-v11';
+const CACHE = 'ynshouf-v12';
 const CORE_ASSETS = [
   './', './index.html', './docx.min.js',
   './css/style.css', './css/auth.css',
-  './js/config.js', './js/photos.js', './js/signature.js',
+  './js/config.js', './js/photodb.js', './js/photos.js', './js/signature.js',
   './js/ui.js', './js/gps.js', './js/ai.js',
   './js/storage.js', './js/report.js', './js/drive.js', './js/auth.js',
   './YNSHOUF_Template.docx',

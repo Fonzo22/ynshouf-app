@@ -40,7 +40,6 @@
     <div class="hdr-nav">
       <button class="nav-btn active" id="btnPageForm" onclick="showPage('form')">דוח חדש</button>
       <button class="nav-btn" id="btnPageHist" onclick="showPage('hist')">היסטוריה</button>
-      <button class="nav-btn danger" onclick="clearForm()">נקה</button>
       <button class="nav-btn" id="btnLogout" onclick="signOut()">יציאה</button>
     </div>
   </div>
@@ -280,11 +279,13 @@
 <div class="act-bar" id="actBar">
   <button class="btn-main" onclick="genReport()"><span class="acc">📄</span> הורד קובץ Word</button>
   <button class="btn-save" onclick="saveDraft()">💾 שמור</button>
+  <button class="btn-clear" onclick="clearForm()">🗑 נקה</button>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script src="js/config.js"></script>
+<script src="js/photodb.js"></script>
 <script src="js/photos.js"></script>
 <script src="js/signature.js"></script>
 <script src="js/ui.js"></script>
