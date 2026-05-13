@@ -46,7 +46,13 @@
       "Bash(curl -s -X POST https://www.govmap.gov.il/api/layers-catalog/entitiesByPoint -H 'Content-Type: application/json' -H 'Referer: https://www.govmap.gov.il/' -H 'x-api-key: aafedfe5-8dfa-4fd5-9af9-8b95759447bd' -d '{\"point\":[34.458825,31.381918],\"layers\":[{\"layerId\":\"16\"}],\"tolerance\":50}')",
       "Bash(curl -s -X POST 'https://www.govmap.gov.il/api/layers-catalog/entitiesByPoint?token=aafedfe5-8dfa-4fd5-9af9-8b95759447bd' -H 'Content-Type: application/json' -H 'Referer: https://www.govmap.gov.il/' -d '{\"point\":[34.458825,31.381918],\"layers\":[{\"layerId\":\"16\"}],\"tolerance\":50}')",
       "Bash(curl -s \"https://www.govmap.gov.il/govmap/api/govmap.api.js\" -o /tmp/govmap.api.js)",
-      "Bash(curl -s \"https://nominatim.openstreetmap.org/reverse?format=json&lat=32.08&lon=34.78&accept-language=he&zoom=18\")"
+      "Bash(curl -s \"https://nominatim.openstreetmap.org/reverse?format=json&lat=32.08&lon=34.78&accept-language=he&zoom=18\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":5500\")",
+      "Bash(python3 replace_header.py)",
+      "Bash(python3 replace_header2.py)",
+      "Bash(python3 replace_header3.py)",
+      "Bash(python3 write_report.py)"
     ]
   }
 }
