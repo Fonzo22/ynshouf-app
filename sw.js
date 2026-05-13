@@ -1,4 +1,4 @@
-const CACHE = 'ynshouf-v10';
+const CACHE = 'ynshouf-v11';
 const CORE_ASSETS = [
   './', './index.html', './docx.min.js',
   './css/style.css', './css/auth.css',

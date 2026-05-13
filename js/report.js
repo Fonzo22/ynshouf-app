@@ -119,7 +119,7 @@ async function genReport() {
     var TBL = { size: 24, color: '000000' };
     var patches = {
       report_id:            { type: D.PatchType.PARAGRAPH, children: [tr(reportId,                    TBL)] },
-      report_date:          { type: D.PatchType.PARAGRAPH, children: [tr(new Date().toLocaleDateString('he-IL'), { size: 20, color: '000000' })] },
+      report_date:          { type: D.PatchType.PARAGRAPH, children: [tr('תאריך כתיבת הדוח: ' + new Date().toLocaleDateString('he-IL'), { size: 20, color: '000000' })] },
       inspector_name:       { type: D.PatchType.PARAGRAPH, children: [tr($('inspName').value,         TBL)] },
       inspector_num:        { type: D.PatchType.PARAGRAPH, children: [tr($('inspNum').value,          TBL)] },
       date:                 { type: D.PatchType.PARAGRAPH, children: [tr(dateHe,                      TBL)] },
